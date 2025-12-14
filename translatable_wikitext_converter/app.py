@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, jsonify
 from flask_cors import CORS  # Import flask-cors
 
-from wikitranslator import convert_to_translatable_wikitext
+from .wikitranslator import convert_to_translatable_wikitext
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes

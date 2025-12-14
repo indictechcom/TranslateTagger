@@ -1,12 +1,13 @@
 import unittest
-from app import convert_to_translatable_wikitext
+
+from translatable_wikitext_converter.app import convert_to_translatable_wikitext
 
 class TestTranslatableWikitext(unittest.TestCase):
 
     def test_section_headers(self):
         self.assertEqual(
             convert_to_translatable_wikitext("==HELLO=="),
-            "<translate>==HELLO==</translate>"  # Removed the \n\n that was expected
+            "<translate>== HELLO ==</translate>"  # Removed the \n\n that was expected
         )
 
     def test_file_tag_translations(self):
@@ -46,7 +47,7 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_multiline_text(self):
         self.assertEqual(
             convert_to_translatable_wikitext('\nhi iam charan\n<br>\nhappy\n\n'),
-            '\n<translate>hi iam charan</translate>\n<br>\n<translate>happy</translate>\n\n' 
+            '<translate>hi iam charan</translate>\n<br>\n<translate>happy</translate>\n\n' 
         )
     
     def test_double_namespace_processing(self):

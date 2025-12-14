@@ -1,69 +1,14 @@
-import re
 from enum import Enum
-import sys
+import re, sys
+
+from .wikitranslator_utils import (
+    capitalise_first_letter,
+    is_emoji_unicode,
+    fix_wiki_page_spacing,
+    _wrap_in_translate
+)
 
 behaviour_switches = ['__NOTOC__', '__FORCETOC__', '__TOC__', '__NOEDITSECTION__', '__NEWSECTIONLINK__', '__NONEWSECTIONLINK__', '__NOGALLERY__', '__HIDDENCAT__', '__EXPECTUNUSEDCATEGORY__', '__NOCONTENTCONVERT__', '__NOCC__', '__NOTITLECONVERT__', '__NOTC__', '__START__', '__END__', '__INDEX__', '__NOINDEX__', '__STATICREDIRECT__', '__EXPECTUNUSEDTEMPLATE__', '__NOGLOBAL__', '__DISAMBIG__', '__EXPECTED_UNCONNECTED_PAGE__', '__ARCHIVEDTALK__', '__NOTALK__', '__EXPECTWITHOUTSCANS__']
-
-# --- Helper Functions for Processing Different Wikitext Elements ---
-# These functions are designed to handle specific wikitext structures.
-# Some will recursively call the main `convert_to_translatable_wikitext`
-# function to process their internal content, ensuring nested elements
-# are also handled correctly.
-
-def capitalise_first_letter(text):
-    """
-    Capitalises the first letter of the given text.
-    If the text is empty or consists only of whitespace, it returns the text unchanged.
-    """
-    if not text or not text.strip():
-        return text
-    return text[0].upper() + text[1:]
-
-def is_emoji_unicode(char):
-    # This is a very simplified set of common emoji ranges.
-    # A comprehensive list would be much longer and more complex.
-    # See https://www.unicode.org/Public/emoji/ for full details.
-    if 0x1F600 <= ord(char) <= 0x1F64F:  # Emoticons
-        return True
-    if 0x1F300 <= ord(char) <= 0x1F5FF:  # Miscellaneous Symbols and Pictographs
-        return True
-    if 0x1F680 <= ord(char) <= 0x1F6FF:  # Transport and Map Symbols
-        return True
-    if 0x2600 <= ord(char) <= 0x26FF:    # Miscellaneous Symbols
-        return True
-    if 0x2700 <= ord(char) <= 0x27BF:    # Dingbats
-        return True
-    # Add more ranges as needed for full coverage
-    return False
-
-def _wrap_in_translate(text):
-    """
-    Wraps the given text with <translate> tags.
-    It ensures that empty or whitespace-only strings are not wrapped.
-    The <translate> tags are added around the non-whitespace content,
-    preserving leading and trailing whitespace.
-    """
-    if not text or not text.strip():
-        return text
-
-    # Find the first and last non-whitespace characters
-    first_char_index = -1
-    last_char_index = -1
-    for i, char in enumerate(text):
-        if char not in (' ', '\n', '\t', '\r', '\f', '\v'): # Check for common whitespace characters
-            if first_char_index == -1:
-                first_char_index = i
-            last_char_index = i
-
-    # If no non-whitespace characters are found (should be caught by text.strip() check, but for robustness)
-    if first_char_index == -1:
-        return text
-
-    leading_whitespace = text[:first_char_index]
-    content = text[first_char_index : last_char_index + 1]
-    trailing_whitespace = text[last_char_index + 1 :]
-
-    return f"{leading_whitespace}<translate>{content}</translate>{trailing_whitespace}"
 
 def process_syntax_highlight(text):
     """
@@ -473,6 +418,9 @@ def convert_to_translatable_wikitext(wikitext):
     """
     if not wikitext:
         return ""
+    
+    wikitext = wikitext.replace('\r\n', '\n').replace('\r', '\n')
+    wikitext = fix_wiki_page_spacing(wikitext)
     
     # add an extra newline at the beginning, useful to process items at the beginning of the text
     wikitext = '\n' + wikitext

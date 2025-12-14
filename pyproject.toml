@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "translatable-wikitext-converter"
+version = "0.1.0"
+description = "Convert wikitext into translatable wikitext"
+authors = [
+    { name = "Gopa Vasanth" }
+]
+requires-python = ">=3.9"
