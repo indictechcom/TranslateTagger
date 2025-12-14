@@ -419,9 +419,9 @@ def process_double_brackets(text, tvar_id=0):
     
     # Assuming it's a regular internal link
     if len(parts) == 1:
-        return f'[[<tvar name={tvar_id}>Special:MyLanguage</tvar>/{capitalise_first_letter(parts[0])}|{parts[0]}]]', double_brackets_types.wikilink
+        return f'[[<tvar name={tvar_id}>Special:MyLanguage/{capitalise_first_letter(parts[0])}</tvar>|{parts[0]}]]', double_brackets_types.wikilink
     if len(parts) == 2 :
-        return f'[[<tvar name={tvar_id}>Special:MyLanguage</tvar>/{capitalise_first_letter(parts[0])}|{parts[1]}]]', double_brackets_types.wikilink
+        return f'[[<tvar name={tvar_id}>Special:MyLanguage/{capitalise_first_letter(parts[0])}</tvar>|{parts[1]}]]', double_brackets_types.wikilink
     return text
 
 def process_external_link(text, tvar_url_id=0):

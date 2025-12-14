@@ -22,7 +22,7 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext(
                 'This is a text with an [[internal link]] and an [https://openstreetmap.org external link].'
             ),
-            '<translate>This is a text with an [[<tvar name=0>Special:MyLanguage</tvar>/Internal link|internal link]] and an [<tvar name=url0>https://openstreetmap.org</tvar> external link].</translate>'
+            '<translate>This is a text with an [[<tvar name=0>Special:MyLanguage/Internal link</tvar>|internal link]] and an [<tvar name=url0>https://openstreetmap.org</tvar> external link].</translate>'
         )
     
     def test_category_with_translation(self):
@@ -40,7 +40,7 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_simple_internal_link(self):
         self.assertEqual(
             convert_to_translatable_wikitext('[[link]]'),
-            '<translate>[[<tvar name=0>Special:MyLanguage</tvar>/Link|link]]</translate>'
+            '<translate>[[<tvar name=0>Special:MyLanguage/Link</tvar>|link]]</translate>'
         )
     
     def test_multiline_text(self):
@@ -62,7 +62,7 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext(
                 '[[Help]]ing'
             ),
-            '<translate>[[<tvar name=0>Special:MyLanguage</tvar>/Help|Help]]ing</translate>'
+            '<translate>[[<tvar name=0>Special:MyLanguage/Help</tvar>|Help]]ing</translate>'
         )
     
     def test_double_namespace_without_list_case_2(self):
@@ -70,7 +70,7 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext(
                 '[[Help]] ing'
             ),
-            '<translate>[[<tvar name=0>Special:MyLanguage</tvar>/Help|Help]] ing</translate>'
+            '<translate>[[<tvar name=0>Special:MyLanguage/Help</tvar>|Help]] ing</translate>'
         )
 
     def test_template_simple(self):
@@ -155,7 +155,7 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_multiple_elements_in_one_line(self):
         self.assertEqual(
             convert_to_translatable_wikitext("Hello world! [[Link]] {{Template}} [https://meta.wikimedia.org/wiki/Main_Page Home]"),
-            '<translate>Hello world! [[<tvar name=0>Special:MyLanguage</tvar>/Link|Link]]</translate> {{Template}} <translate>[<tvar name=url0>https://meta.wikimedia.org/wiki/Main_Page</tvar> Home]</translate>'
+            '<translate>Hello world! [[<tvar name=0>Special:MyLanguage/Link</tvar>|Link]]</translate> {{Template}} <translate>[<tvar name=url0>https://meta.wikimedia.org/wiki/Main_Page</tvar> Home]</translate>'
         )
 
     def test_text_around_br_tag(self):
