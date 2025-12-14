@@ -7,7 +7,7 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_section_headers(self):
         self.assertEqual(
             convert_to_translatable_wikitext("==HELLO=="),
-            "<translate>== HELLO ==</translate>"  # Removed the \n\n that was expected
+            """<translate>\n== HELLO ==\n</translate>""" 
         )
 
     def test_file_tag_translations(self):
@@ -47,7 +47,7 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_multiline_text(self):
         self.assertEqual(
             convert_to_translatable_wikitext('\nhi iam charan\n<br>\nhappy\n\n'),
-            '<translate>hi iam charan</translate>\n<br>\n<translate>happy</translate>\n\n' 
+            '<translate>hi iam charan</translate>\n<br>\n<translate>happy</translate>' 
         )
     
     def test_double_namespace_processing(self):
@@ -174,19 +174,19 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_whitespace_only_input(self):
         self.assertEqual(
             convert_to_translatable_wikitext("   \n\t "),
-            "   \n\t "
+            "\t"
         )
 
     def test_list_items(self):
         self.assertEqual(
             convert_to_translatable_wikitext("* Item 1\n** Sub-item 1.1\n* Item 2"),
-            "* <translate>Item 1</translate>\n** <translate>Sub-item 1.1</translate>\n* <translate>Item 2</translate>\n"
+            "* <translate>Item 1</translate>\n** <translate>Sub-item 1.1</translate>\n* <translate>Item 2</translate>"
         )
 
     def test_definition_list(self):
         self.assertEqual(
             convert_to_translatable_wikitext(";Term\n:Definition\n:Description"),
-            "; <translate>Term</translate>\n: <translate>Definition</translate>\n: <translate>Description</translate>\n"
+            "; <translate>Term</translate>\n: <translate>Definition</translate>\n: <translate>Description</translate>"
         )
 
 if __name__ == '__main__':

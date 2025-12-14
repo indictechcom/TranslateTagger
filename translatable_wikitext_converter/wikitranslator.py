@@ -734,5 +734,12 @@ def convert_to_translatable_wikitext(wikitext):
         print(f"---\n") 
     #"""
     
-    # Join the processed parts into a single string and remove extra leading newline
-    return ''.join(processed_parts).lstrip('\n')
+    # Join the processed parts into a single string
+    out_wikitext =  ''.join(processed_parts)
+    
+    # Keep removing all trailing and leading newlines and spaces
+    while out_wikitext.startswith('\n') or out_wikitext.startswith(' ') or out_wikitext.endswith('\n') or out_wikitext.endswith(' '):
+        out_wikitext = out_wikitext.strip('\n')
+        out_wikitext = out_wikitext.strip(' ')
+    
+    return out_wikitext
