@@ -37,13 +37,21 @@
 
     ```bash
         pip install -r requirements.txt
+        pip install -e .
     ```
 
 4. **Run the Application**
+   ```bash
+   flask --app ./translatable_wikitext_converter/app.py  run --port 5000
+   ```
+   As an alternative:
     ```bash
-        python app.py
+        python -m translatable_wikitext_converter.app
     ```
-
+5. **Run the tests**
+   ```bash
+   python ./translatable_wikitext_converter/tests.py
+   ```
 The application will start on http://127.0.0.1:5000.
 
 ## Usage
