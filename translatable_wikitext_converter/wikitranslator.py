@@ -16,19 +16,7 @@ def process_syntax_highlight(text):
     It wraps the content in <translate> tags.
     """
     assert(text.startswith('<syntaxhighlight') and text.endswith('</syntaxhighlight>')), "Invalid syntax highlight tag"
-    # Get inside the <syntaxhighlight> tag
-    start_tag_end = text.find('>') + 1
-    end_tag_start = text.rfind('<')
-    if start_tag_end >= end_tag_start:
-        return text 
-    prefix = text[:start_tag_end]
-    content = text[start_tag_end:end_tag_start].strip()
-    suffix = text[end_tag_start:]
-    if not content:
-        return text
-    # Wrap the content in <translate> tags
-    wrapped_content = _wrap_in_translate(content)
-    return f"{prefix}{wrapped_content}{suffix}"
+    return "<tvar>" + text + "</tvar>"
 
 def process_table(text):
     """
@@ -76,7 +64,7 @@ def process_poem_tag(text):
     wrapped_content = _wrap_in_translate(content)
     return f"{prefix}{wrapped_content}{suffix}"
 
-def process_code_tag(text, tvar_code_id=0):
+def process_code_tag(text):
     """
     Processes <code> tags in the wikitext.
     It wraps the content in <translate> tags.
@@ -93,7 +81,7 @@ def process_code_tag(text, tvar_code_id=0):
     if not content:
         return text
     # Wrap the content in <translate> tags
-    wrapped_content = f'<tvar name=code{tvar_code_id}>{content}</tvar>'
+    wrapped_content = f'<tvar>{content}</tvar>'
     return f"{prefix}{wrapped_content}{suffix}"
 
 def process_div(text):
@@ -220,7 +208,7 @@ def process_item(text):
     item_content = text[offset:].strip()
     if not item_content:
         return text
-    return text[:offset] + ' ' + _wrap_in_translate(item_content) + '\n'
+    return text[:offset] + ' ' + convert_to_translatable_wikitext(item_content) + '\n'
 
 class double_brackets_types(Enum):
     wikilink = 1
@@ -229,8 +217,8 @@ class double_brackets_types(Enum):
     not_inline_icon_file = 4
     special = 5
     invalid_file = 6
-
-def _process_file(s, tvar_inline_icon_id=0): 
+    
+def _process_file(s): 
     # Define keywords that should NOT be translated when found as parameters
     NON_TRANSLATABLE_KEYWORDS = {
         'left', 'right', 'centre', 'center', 'thumb', 'frameless', 'border', 'none', 
@@ -291,7 +279,7 @@ def _process_file(s, tvar_inline_icon_id=0):
         
     if is_inline_icon:
         # return something like: <tvar name="icon">[[File:smiley.png|alt=🙂]]</tvar>
-        returnline = f'<tvar name=icon{tvar_inline_icon_id}>[[' + '|'.join(tokens) + ']]</tvar>'
+        returnline = f'<tvar>[[' + '|'.join(tokens) + ']]</tvar>'
         return returnline, double_brackets_types.inline_icon
     
     ############################
@@ -327,7 +315,7 @@ def _process_file(s, tvar_inline_icon_id=0):
     returnline = '[[' + '|'.join(output_parts) + ']]' 
     return returnline, double_brackets_types.not_inline_icon_file
     
-def process_double_brackets(text, tvar_id=0):
+def process_double_brackets(text):
     """
     Processes internal links in the wikitext.
     It wraps the content in <translate> tags.
@@ -344,7 +332,9 @@ def process_double_brackets(text, tvar_id=0):
     category_aliases = ['Category:', 'category:', 'Cat:', 'cat:']
     file_aliases = ['File:', 'file:', 'Image:', 'image:']
     
-    parts[0] = parts[0].strip()  # Clean up the first part
+    # strip all parts
+    parts = [part.strip() for part in parts]
+    
     # Check if the first part is a category or file alias
     if parts[0].startswith(tuple(category_aliases)):
         # Handle category links
@@ -357,14 +347,174 @@ def process_double_brackets(text, tvar_id=0):
         # Handle special pages
         return f'[[{parts[0]}]]', double_brackets_types.special
     
-    # Assuming it's a regular internal link
+    #############################
+    # Managing wikilinks
+    #############################
+
+    # List of recognised prefixes for Wikimedia projects (e.g., wikipedia, commons)
+    # and local/national chapters (e.g., wmde, wmit).
+    interwiki_prefixes = [
+        # Main Projects
+        "wikipedia", "w",
+        "wiktionary", "wikt",
+        "wikinews", "n",
+        "wikibooks", "b",
+        "wikiquote", "q",
+        "wikisource", "s",
+        "oldwikisource", "s:mul",
+        "wikispecies", "species",
+        "wikiversity", "v",
+        "wikivoyage", "voy",
+        "wikimedia", "foundation", "wmf",
+        "commons", "c",
+        "metawiki", "metawikimedia", "metawikipedia", "meta", "m",
+        "incubator",
+        "strategy",
+        "mediawikiwiki", "mw",
+        "mediazilla", "bugzilla",
+        "phabricator", "phab",
+        "testwiki",
+        "wikidata", "d",
+        "wikifunctions", "f",
+        "wikitech",
+        "toolforge",
+
+        # National Chapters
+        "wmar", "wmau", "wmbd", "wmbe", "wmbr", "wmca", "wmcz", "wmdk",
+        "wmde", "wmfi", "wmhk", "wmhu", "wmin", "wmid", "wmil", "wmit",
+        "wmnl", "wmmk", "wmno", "wmpl", "wmru", "wmrs", "wmes", "wmse",
+        "wmch", "wmtw", "wmua", "wmuk",
+
+        # Other Wikimedia Prefixes
+        "betawikiversity", "v:mul",
+        "download", "dbdump", "gerrit", "mail", "mailarchive",
+        "outreach", "otrs", "OTRSwiki", "quality", "spcom",
+        "ticket", "tools", "tswiki", "svn", "sulutil",
+        "rev", "wmania", "wm2016", "wm2017"
+    ]
+    # Convert the list to a set for efficient lookup/checking.
+    interwiki_prefixes_set = set(interwiki_prefixes)
+    # Regex to identify if the link starts with a language code (e.g., 'it:', 'bn:').
+    LANGUAGE_CODE_PATTERN = re.compile(r'^[a-z]{2,3}:')
+
+    # Determine the link target (before the pipe) and the display text (after the pipe).
+    link_title = parts[0]
+    # If a pipe is present, use the part after it; otherwise, use the link target itself.
+    display_text = parts[1] if len(parts) > 1 else parts[0]
+
+    # --- 1. Checking for Project/Chapter/Interwiki Prefixes ---
+
+    # We try to extract the prefix (e.g. ":bn:" from ":bn:Page")
+    first_part_lower = link_title.lower()
+
+    has_known_prefix = False
+
+    # A. Check 1: Simple Language Code Match (e.g., ":it:", ":bn:")
+    # This covers the explicit requirement: "se inizia con un codice linguistico e i due punti..."
+    if LANGUAGE_CODE_PATTERN.match(first_part_lower):
+        has_known_prefix = True
+
+    # B. Check 2: Complex Prefix Parsing (Covers "w:", "commons:", "wmde:", or combined forms)
+    elif ':' in first_part_lower:
+        # Split the link by colon, excluding the last part which is the page title.
+        # Example: ":bn:s:Page" -> segments: ['','bn','s']
+        # Example: ":w:de:Page" -> segments: ['', 'w','de']
+        # Example: ":commons:File" -> segments: ['', 'commons']
+        
+        segments = first_part_lower.split(':')
+        
+        # We look at all segments except the last one (which is the actual page title).
+        # We stop the search if the last segment (the title) is empty, which happens for links ending in a colon.
+        # e.g., 'w:' splits to ['w', ''] -> we check 'w'.
+        limit = len(segments) - 1
+        if segments[-1] == '':
+            limit = len(segments) - 2
+        
+        # Iterate through all prefix segments
+        for segment in segments[:limit]:
+            # The empty string segment resulting from a leading colon (e.g., ':w:de:Page' -> first segment is '') is ignored.
+            if segment:
+                # Check if the segment is a known project/chapter prefix.
+                if segment in interwiki_prefixes_set:
+                    has_known_prefix = True
+                    break # Stop checking once any known prefix is found
+
+                # Check if the segment is a language code (e.g., 'de' in 'w:de:Page').
+                # We can't use the regex pattern here as it checks for start-of-string.
+                # A quick check for typical language code length (2 or 3 chars) is used as a proxy, 
+                # although a full language code check would be more robust.
+                if 2 <= len(segment) <= 3: 
+                    # Assuming a 2/3 letter segment that isn't a known prefix is treated as a language code
+                    # for the purpose of avoiding Special:MyLanguage.
+                    has_known_prefix = True
+                    break
+            
+    # If the link is complex (multiple colons) or contains a known prefix, 
+    # then it is an interwiki link and should not be routed through Special:MyLanguage.
+    # The check below remains the same, but 'has_known_prefix' is now robustly set.
+
+    if has_known_prefix or ':' in link_title:
+        # If it has a prefix (linguistic or project/chapter), DO NOT use Special:MyLanguage.
+
+        # --- 2. Special handling for the ":en:" prefix ---
+        if first_part_lower.startswith(':en:'):
+            # For links starting with ':en:', rewrite using the {{lwp|...}} template.
+            
+            # The suffix is the page title *without* the ":en:" prefix.
+            en_suffix = link_title[4:] # Removes ":en:"
+            capitalised_en_suffix = capitalise_first_letter(en_suffix)
+            # Case 1: No pipe (e.g., "[[en:About]]")
+            if len(parts) == 1:
+                # Target: {{lwp|About}}. Display text: About (en_suffix).
+                return f'[[<tvar>{{{{lwp|{capitalised_en_suffix}}}}}</tvar>|{en_suffix}]]', double_brackets_types.wikilink
+
+            # Case 2: With pipe (e.g., "[[en:About|Read More]]")
+            if len(parts) == 2:
+                # Target: {{lwp|About}}. Display text: Read More (display_text).
+                return f'[[<tvar>{{{{lwp|{capitalised_en_suffix}}}}}</tvar>|{display_text}]]', double_brackets_types.wikilink
+
+        # --- 3. Handling all other interwiki/prefixed links (e.g., ":it:", "w:", "wmde:") ---
+
+        # Find the index of the *last* colon to correctly separate the page title
+        # from the potentially complex prefix (e.g., extract 'Page' from 'bn:Page').
+        if link_title.rfind(':') != -1:
+            # Extract the page title by finding the content after the final colon.
+            title_without_prefix = link_title[link_title.rfind(':') + 1:]
+        else:
+            # Should not happen for prefixed links, but handles the fallback gracefully.
+            title_without_prefix = link_title
+
+        # Case 1: No pipe (e.g., "[[bn:Page]]" or "[[w:Page]]")
+        if len(parts) == 1:
+            # Link target remains link_title (e.g., bn:Page). 
+            # Display text is the title *without* the prefix (e.g., Page).
+            return f'[[<tvar>{link_title}</tvar>|{title_without_prefix}]]', double_brackets_types.wikilink
+
+        # Case 2: With pipe (e.g., "[[bn:Page|Text]]")
+        if len(parts) == 2:
+            # Link target remains link_title (e.g., bn:Page). 
+            # Display text is the text after the pipe (e.g., Text).
+            return f'[[<tvar>{link_title}</tvar>|{display_text}]]', double_brackets_types.wikilink
+
+    # --- 4. Standard internal links (No special prefix found) ---
+
+    # For standard internal links, the target must be prefixed with Special:MyLanguage
+    # to enable automatic localisation. 'capitalise_first_letter' is required here.
+    
+    # Case 1: No pipe (e.g., [[Page]])
     if len(parts) == 1:
-        return f'[[<tvar name={tvar_id}>Special:MyLanguage/{capitalise_first_letter(parts[0])}</tvar>|{parts[0]}]]', double_brackets_types.wikilink
-    if len(parts) == 2 :
-        return f'[[<tvar name={tvar_id}>Special:MyLanguage/{capitalise_first_letter(parts[0])}</tvar>|{parts[1]}]]', double_brackets_types.wikilink
+        # Target: Special:MyLanguage/Page. Display text: Page (link_title).
+        return f'[[<tvar>Special:MyLanguage/{capitalise_first_letter(link_title)}</tvar>|{link_title}]]', double_brackets_types.wikilink
+
+    # Case 2: With pipe (e.g., [[Page|Text]])
+    if len(parts) == 2:
+        # Target: Special:MyLanguage/Page. Display text: Text (display_text).
+        return f'[[<tvar>Special:MyLanguage/{capitalise_first_letter(link_title)}</tvar>|{display_text}]]', double_brackets_types.wikilink
+
+    # Fallback for unexpected link format (e.g., more than one pipe).
     return text
 
-def process_external_link(text, tvar_url_id=0):
+def process_external_link(text):
     """
     Processes external links in the format [http://example.com Description] and ensures
     that only the description part is wrapped in <translate> tags, leaving the URL untouched.
@@ -375,7 +525,7 @@ def process_external_link(text, tvar_url_id=0):
         url_part = match.group(1)
         description_part = match.group(2)
         # Wrap only the description part in <translate> tags, leave the URL untouched
-        return f'[<tvar name=url{tvar_url_id}>{url_part}</tvar> {description_part}]'
+        return f'[<tvar>{url_part}</tvar> {description_part}]'
     return text
 
 def process_template(text):
@@ -406,6 +556,9 @@ def process_raw_url(text):
         return text
     return text.strip()
 
+def tag_for_translation(text):
+    converted_text = convert_to_translatable_wikitext(text)
+    return set_tvar_names(converted_text)
 
 # --- Main Tokenisation Logic ---
 
@@ -439,7 +592,7 @@ def convert_to_translatable_wikitext(wikitext):
             if last < curr:
                 parts.append((wikitext[last:curr], _wrap_in_translate))
             parts.append((wikitext[curr:end_pattern], process_syntax_highlight))
-            curr = end_pos
+            curr = end_pattern
             last = curr
             continue 
         # Table block
@@ -674,37 +827,33 @@ def convert_to_translatable_wikitext(wikitext):
     """
     
     # Process links
-    tvar_id = 0
-    tvar_url_id = 0
-    tvar_code_id = 0
-    tvar_inline_icon_id = 0
     for i, (part, handler) in enumerate(parts):
         # Handlers for links require a tvar_id
         if handler == process_double_brackets:
-            new_part, double_brackets_type = handler(part, tvar_id)
+            new_part, double_brackets_type = handler(part)
             if double_brackets_type in [double_brackets_types.wikilink, double_brackets_types.special, double_brackets_types.inline_icon]:
                 new_handler = _wrap_in_translate  # Change handler to _wrap_in_translate
             else :
                 new_handler = lambda x: x  # No further processing for categories and files
             parts[i] = (new_part, new_handler)
-            tvar_id += 1
         elif handler == process_external_link:
-            new_part = handler(part, tvar_url_id)
+            new_part = handler(part)
             new_handler = _wrap_in_translate  # Change handler to _wrap_in_translate
             parts[i] = (new_part, new_handler)
-            tvar_url_id += 1
         elif handler == process_code_tag:
-            new_part = handler(part, tvar_code_id)
+            new_part = handler(part)
             new_handler = _wrap_in_translate  # Change handler to _wrap_in_translate
             parts[i] = (new_part, new_handler)
-            tvar_code_id += 1
         elif handler == process_double_brackets :
-            new_part, double_brackets_type = handler(part, tvar_inline_icon_id)
+            new_part, double_brackets_type = handler(part)
             if double_brackets_type == double_brackets_types.inline_icon:
                 new_handler = _wrap_in_translate  # Change handler to _wrap_in_translate
-                tvar_inline_icon_id += 1
             else:
                 new_handler = lambda x: x
+        elif handler == process_syntax_highlight :
+            new_part = handler(part)
+            new_handler = _wrap_in_translate  # Change handler to _wrap_in_translate
+            parts[i] = (new_part, new_handler)
             
     # Scan again the parts: merge consecutive parts handled by _wrap_in_translate
     _parts = []
@@ -724,7 +873,7 @@ def convert_to_translatable_wikitext(wikitext):
     processed_parts = [handler(part) for part, handler in _parts]            
     
     # Debug output
-    #"""
+    """
     print("Processed parts:")
     for i, (ppart, (part, handler)) in enumerate(zip(processed_parts, _parts)):
         print(f"--- Start element {i} with handler {handler.__name__} ---")
@@ -732,7 +881,7 @@ def convert_to_translatable_wikitext(wikitext):
         print(f"---\n") 
         print(f'@{ppart}@')  
         print(f"---\n") 
-    #"""
+    """
     
     # Join the processed parts into a single string
     out_wikitext =  ''.join(processed_parts)
@@ -743,3 +892,96 @@ def convert_to_translatable_wikitext(wikitext):
         out_wikitext = out_wikitext.strip(' ')
     
     return out_wikitext
+
+def set_tvar_names(input_text: str) -> str:
+    """
+    Sets the 'name' attribute of every <tvar> tag inside a <translate> block,
+    using an increasing counter (starting from 1) for each <translate> block.
+
+    This version assumes <tvar> tags are initially simple, e.g., <tvar> or <tvar/>.
+
+    Args:
+        input_text: The input string containing <translate> and <tvar> tags.
+
+    Returns:
+        The modified string with the 'name' attributes set.
+    """
+
+    # 1. Regular expression to find all <translate> blocks, including content.
+    # We use re.DOTALL to ensure the match spans multiple lines.
+    translate_pattern = re.compile(r'(<translate>.*?<\/translate>)', re.DOTALL)
+
+    def process_translate_block(full_block_match):
+        """
+        Callback function for re.sub that processes one <translate> block.
+        It finds all simple <tvar> tags inside and gives them an incremental 'name' attribute.
+        """
+        # The entire matched <translate> block
+        full_block = full_block_match.group(0)
+        
+        # Initialise the counter for the current block
+        count = 1
+        
+        def substitute_simple_tvar(tvar_match):
+            """
+            Inner callback function to substitute a simple <tvar> and increment the counter.
+            """
+            nonlocal count
+            
+            # The match group 1 captures the opening tag parts: '<tvar'
+            opening_part = tvar_match.group(1)
+            
+            # Construct the modified tag: insert name="count" before the closing bracket
+            # We assume a simple structure like <tvar> becomes <tvar name="1">
+            # or <tvar/> becomes <tvar name="1"/>
+            
+            # This expression handles both <tvar> and <tvar/> by replacing the final '>' or '/>'
+            # with the insertion plus the captured closing part (group 2).
+            name_attribute = f' name="{count}"'
+            
+            # Group 2 captures the closing element (either '>' or '/>')
+            closing_part = tvar_match.group(2)
+            
+            new_tag = f'{opening_part}{name_attribute}{closing_part}'
+            
+            # Increment the counter for the next <tvar>
+            count += 1
+            
+            return new_tag
+            
+        # Internal pattern: finds <tvar> or <tvar/> where 'name' is not present.
+        # This is a robust pattern for HTML/XML tags where an attribute is to be inserted
+        # right before the closing bracket.
+        
+        # Group 1: (<tvar\s*) - The opening tag up to the first space/end
+        # Group 2: (/?\s*>) - The closing angle bracket (possibly with / for self-closing)
+        # We need to ensure we don't accidentally match existing 'name' attributes.
+        
+        # Simpler pattern for *all* <tvar> tags, assuming no existing name:
+        tvar_pattern_inner = re.compile(r'(<tvar\s*)(/?\s*>)', re.DOTALL)
+
+        # To strictly avoid tags that *already* contain 'name':
+        # We use a negative lookahead to ensure "name=" is not present inside <tvar...>
+        # This pattern is more complex but safer:
+        tvar_pattern_safer = re.compile(r'(<tvar(?![^>]*name=)[^>]*)(>)', re.IGNORECASE | re.DOTALL)
+        
+        # We will utilise the simpler pattern, assuming the context is pre-processing before translation:
+        tvar_pattern_to_use = re.compile(r'(<tvar\s*)(/?\s*>)', re.DOTALL)
+
+        # Apply the substitution to all <tvar> tags within the current block
+        modified_block = re.sub(
+            tvar_pattern_to_use,
+            substitute_simple_tvar,
+            full_block
+        )
+        
+        return modified_block
+        
+    # 2. Apply the block processor function to all <translate> blocks.
+    final_result = re.sub(
+        translate_pattern,
+        process_translate_block,
+        input_text
+    )
+    
+    return final_result

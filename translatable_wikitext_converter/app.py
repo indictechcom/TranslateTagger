@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, jsonify
 from flask_cors import CORS  # Import flask-cors
 
-from .wikitranslator import convert_to_translatable_wikitext
+from .wikitranslator import tag_for_translation
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -17,8 +17,8 @@ def redirect_to_home():
 @app.route('/convert', methods=['POST'])
 def convert():
     wikitext = request.form.get('wikitext', '')
-    converted_text = convert_to_translatable_wikitext(wikitext)
-    return render_template('home.html', original=wikitext, converted=converted_text)
+    tagged = tag_for_translation(wikitext)
+    return render_template('home.html', original=wikitext, converted=tagged)
 
 @app.route('/api/convert', methods=['GET', 'POST'])
 def api_convert():
@@ -47,4 +47,4 @@ def api_convert():
         })
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
