@@ -153,8 +153,8 @@ def process_code_tag(text, tvar_code_id=0):
     if not content:
         return text
     # Wrap the content in <translate> tags
-    wrapped_content = f'<tvar name=code{tvar_code_id}>{content}</tvar>'
-    return f"{prefix}{wrapped_content}{suffix}"
+    wrapped_content = f'<tvar name=code{tvar_code_id}>{prefix}{content}{suffix}</tvar>'
+    return wrapped_content
 
 def process_div(text):
     """
