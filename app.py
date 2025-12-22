@@ -4,6 +4,9 @@ import re
 from enum import Enum
 import sys
 
+import mwparserfromhell
+from mwparserfromhell.nodes import Tag
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
@@ -92,11 +95,37 @@ def process_syntax_highlight(text):
 
 def process_table(text):
     """
-    Processes table blocks in the wikitext.
-    It wraps the content in <translate> tags.
+    Processes table blocks in the wikitext using mwparserfromhell.
+    It identifies cells (td, th) and wraps their content in <translate> tags,
+    handling nested structures and pipes correctly.
     """
-    assert(text.startswith('{|') and text.endswith('|}')), "Invalid table tag"
-    return text
+    try:
+        wikicode = mwparserfromhell.parse(text)
+    except Exception as e:
+        print(f"Error parsing table: {e}")
+        return text
+
+    if not wikicode.nodes:
+        return text
+
+    table = wikicode.nodes[0]
+    if not isinstance(table, Tag):
+        return text
+
+    def process_cells(nodes):
+        for node in nodes:
+            if isinstance(node, Tag):
+                if node.tag in ('td', 'th'):
+                    cell_content = str(node.contents)
+                    if cell_content.strip():
+                         node.contents = convert_to_translatable_wikitext(cell_content)
+                elif node.tag == 'tr':
+                    process_cells(node.contents.nodes)
+    
+    if hasattr(table, 'contents'):
+        process_cells(table.contents.nodes)
+
+    return str(wikicode)
 
 def process_blockquote(text):
     """
@@ -390,39 +419,37 @@ def _process_file(s, tvar_inline_icon_id=0):
 def process_double_brackets(text, tvar_id=0):
     """
     Processes internal links in the wikitext.
-    It wraps the content in <translate> tags.
+    Wraps content in <translate> tags or adds MyLanguage prefix for normal links.
     """
-    if not (text.startswith("[[") and text.endswith("]]")) :
+    if not (text.startswith("[[") and text.endswith("]]")):
         print(f"Input >{text}< must be wrapped in double brackets [[ ]]")
         sys.exit(1)
-    # Split the link into parts, handling both internal links and links with display text
-    
-    inner_wl = text[2:-2]  # Remove the leading [[ and trailing ]]
+
+    inner_wl = text[2:-2].strip()
     parts = inner_wl.split('|')
-    
-    # part 0
+
     category_aliases = ['Category:', 'category:', 'Cat:', 'cat:']
     file_aliases = ['File:', 'file:', 'Image:', 'image:']
-    
-    parts[0] = parts[0].strip()  # Clean up the first part
-    # Check if the first part is a category or file alias
+    skip_namespaces = category_aliases + file_aliases + ['Special:', 'User:', 'User talk:']
+
+    ns = None
+    if ':' in parts[0]:
+        ns = parts[0].split(':', 1)[0] + ':'
+
     if parts[0].startswith(tuple(category_aliases)):
-        # Handle category links
         cat_name = parts[0].split(':', 1)[1] if ':' in parts[0] else parts[0]
         return f'[[Category:{cat_name}{{{{#translation:}}}}]]', double_brackets_types.category
-    elif parts[0].startswith(tuple(file_aliases)):
-        # Handle file links
+    if parts[0].startswith(tuple(file_aliases)):
         return _process_file(text)
-    elif parts[0].startswith('Special:'):
-        # Handle special pages
-        return f'[[{parts[0]}]]', double_brackets_types.special
-    
-    # Assuming it's a regular internal link
+    if ns in skip_namespaces:
+        return text, double_brackets_types.special if ns == 'Special:' else double_brackets_types.wikilink
     if len(parts) == 1:
         return f'[[<tvar name={tvar_id}>Special:MyLanguage</tvar>/{capitalise_first_letter(parts[0])}|{parts[0]}]]', double_brackets_types.wikilink
-    if len(parts) == 2 :
+    if len(parts) == 2:
         return f'[[<tvar name={tvar_id}>Special:MyLanguage</tvar>/{capitalise_first_letter(parts[0])}|{parts[1]}]]', double_brackets_types.wikilink
+
     return text
+
 
 def process_external_link(text, tvar_url_id=0):
     """
