@@ -472,15 +472,14 @@ def process_template(text):
     """
     assert(text.startswith('{{') and text.endswith('}}')), "Invalid template tag"
     # Split the template content from the rest of the text
-    inner_content = text[2:-2].strip()  # Remove the leading {{ and trailing }}
-    inner_content = capitalise_first_letter(inner_content)  # Capitalise the first letter of the inner content
-    
-    # If the inner content is empty, return an empty string
-    if not inner_content :
-        return text
-    
-    # Wrap the inner content in <translate> tags
-    return '{{' + inner_content + '}}'
+    code = mwparserfromhell.parse(text)
+    template = code.filter_templates()[0]
+
+    if template.has(2):
+        param = template.get(2)
+        param.value = f"2=<translate>{param.value.strip_code()}</translate>"
+
+    return str(code)
 
 def process_raw_url(text):
     """
