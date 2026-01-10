@@ -309,7 +309,7 @@ def process_item(text):
     item_content = text[offset:].strip()
     if not item_content:
         return text
-    return text[:offset] + ' ' + _wrap_in_translate(item_content) + '\n'
+    return text[:offset] + ' ' + convert_to_translatable_wikitext(item_content) + '\n'
 
 class double_brackets_types(Enum):
     wikilink = 1
