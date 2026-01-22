@@ -424,9 +424,23 @@ def process_double_brackets(text, tvar_id=0):
     if not (text.startswith("[[") and text.endswith("]]")):
         print(f"Input >{text}< must be wrapped in double brackets [[ ]]")
         sys.exit(1)
+    
+    if '<tvar' in text:
+        return text, double_brackets_types.wikilink
 
     inner_wl = text[2:-2].strip()
-    parts = inner_wl.split('|')
+    s = inner_wl
+
+    first = s.find('|')
+    if first == -1:
+        parts = [s]  
+    else:
+        second = s.find('|', first + 1)
+        if second != -1:
+            parts = [s[:second], s[second + 1:]]  
+        else:
+            parts = [s[:first], s[first + 1:]]    
+
 
     category_aliases = ['Category:', 'category:', 'Cat:', 'cat:']
     file_aliases = ['File:', 'file:', 'Image:', 'image:']
@@ -862,3 +876,4 @@ def api_convert():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
