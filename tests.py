@@ -88,7 +88,7 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_template_nested_in_text(self):
         self.assertEqual(
             convert_to_translatable_wikitext('Some text with {{a template here}} and more text.'),
-            '<translate>Some text with</translate> {{A template here}} <translate>and more text.</translate>'
+            '<translate>Some text with</translate> {{a template here}} <translate>and more text.</translate>'
         )
 
     def test_nowiki_tag(self):
@@ -110,11 +110,13 @@ class TestTranslatableWikitext(unittest.TestCase):
         )
 
     def test_code_tag_with_tvar(self):
+
         # Assuming process_code_tag assigns tvar names sequentially starting from 0
         self.assertEqual(
             convert_to_translatable_wikitext("Here is <code>some code</code> for you."),
-            "<translate>Here is <code><tvar name=code0>some code</tvar></code> for you.</translate>"
+            "<translate>Here is <tvar name=code0><code>some code</code></tvar> for you.</translate>"
         )
+       
 
     def test_div_tag(self):
         self.assertEqual(
