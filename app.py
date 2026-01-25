@@ -539,6 +539,38 @@ def convert_to_translatable_wikitext(wikitext):
             curr = end_pos
             last = curr
             continue 
+        
+        # Skip content if already translated 
+        pattern = '<translate>'
+        if wikitext.startswith(pattern, curr):
+            end_pattern = wikitext.find('</translate>', curr) + len('</translate>')
+            if last < curr:
+                parts.append((wikitext[last:curr], _wrap_in_translate))
+            parts.append((wikitext[curr:end_pattern], lambda x: x))
+            curr = end_pattern
+            last = curr
+            continue
+
+        pattern = '<languages/>'
+        if wikitext.startswith(pattern, curr):
+            end_pattern = curr + len(pattern)
+            if last < curr:
+                parts.append((wikitext[last:curr], _wrap_in_translate))
+            parts.append((wikitext[curr:end_pattern], lambda x: x))
+            curr = end_pattern
+            last = curr
+            continue
+
+        pattern = '<language>'
+        if wikitext.startswith(pattern, curr):
+            end_pattern = curr + len('<language>')
+            if last < curr:
+                parts.append((wikitext[last:curr], _wrap_in_translate))
+            parts.append((wikitext[curr:end_pattern], lambda x: x))
+            curr = end_pattern
+            last = curr
+            continue
+
         # Table block
         pattern = '{|'
         if wikitext.startswith(pattern, curr):
