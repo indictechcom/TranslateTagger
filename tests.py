@@ -189,6 +189,12 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext(";Term\n:Definition\n:Description"),
             "; <translate>Term</translate>\n: <translate>Definition</translate>\n: <translate>Description</translate>\n"
         )
+    
+    def test_existing_translate_tags(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("<translate>This is already translated.</translate>"),
+            "<translate>This is already translated.</translate>"
+        )
 
 if __name__ == '__main__':
     unittest.main(exit=False, failfast=True)
