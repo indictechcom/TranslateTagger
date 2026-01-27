@@ -270,6 +270,23 @@ def process_small_tag(text):
     wrapped_content = _wrap_in_translate(content)
     return f"{prefix}{wrapped_content}{suffix}"
 
+def process_existing_translate(text):
+    """
+    Processes existing <translate> tags in the wikitext.
+    It removes the existing tags and processes the content through the converter,
+    which will add new translate tags as needed.
+    """
+    assert(text.startswith('<translate>') and text.endswith('</translate>')), "Invalid translate tag"
+    start_tag_end = text.find('>') + 1
+    end_tag_start = text.rfind('<')
+    if start_tag_end >= end_tag_start:
+        return ""
+    content = text[start_tag_end:end_tag_start]
+    if not content.strip():
+        return content  # Return just whitespace without tags
+    # Process the content through the converter (it will add translate tags as needed)
+    return convert_to_translatable_wikitext(content)
+
 def process_nowiki(text):
     """
     Processes <nowiki> tags in the wikitext.
@@ -540,13 +557,13 @@ def convert_to_translatable_wikitext(wikitext):
             last = curr
             continue 
         
-        # Skip content if already translated 
+        # Process content inside existing <translate> tags
         pattern = '<translate>'
         if wikitext.startswith(pattern, curr):
             end_pattern = wikitext.find('</translate>', curr) + len('</translate>')
             if last < curr:
                 parts.append((wikitext[last:curr], _wrap_in_translate))
-            parts.append((wikitext[curr:end_pattern], lambda x: x))
+            parts.append((wikitext[curr:end_pattern], process_existing_translate))
             curr = end_pattern
             last = curr
             continue
