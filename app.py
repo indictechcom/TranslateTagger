@@ -512,6 +512,21 @@ def process_template(text):
 
     return str(code)
 
+
+# --- Section Heading Handler ---
+def process_section_heading(text):
+    """
+    Processes section headings like ==Title== and wraps the heading text in <translate> tags.
+    """
+    # Match ==Title==, ===Subsection===, etc.
+    match = re.match(r'^(=+)([^=]+)(=+)$', text.strip())
+    if not match:
+        return text
+    level = match.group(1)
+    heading_text = match.group(2).strip()
+    # Reconstruct with same number of = on both sides
+    return f'{level}<translate>{heading_text}</translate>{level}'
+
 def process_raw_url(text):
     """
     Processes raw URLs in the wikitext.
@@ -546,6 +561,19 @@ def convert_to_translatable_wikitext(wikitext):
 
     while curr < text_length :
         found = None
+        if wikitext[curr] == '=':
+            # Find the end of the line
+            end_line = wikitext.find('\n', curr)
+            if end_line == -1:
+                end_line = text_length
+            line = wikitext[curr:end_line]
+            if re.match(r'^(=+)[^=]+(=+)$', line.strip()):
+                if last < curr:
+                    parts.append((wikitext[last:curr], _wrap_in_translate))
+                parts.append((line, process_section_heading))
+                curr = end_line
+                last = curr
+                continue
         # Syntax highlight block
         pattern = '<syntaxhighlight'
         if wikitext.startswith(pattern, curr):
