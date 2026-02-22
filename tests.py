@@ -208,5 +208,31 @@ class TestTranslatableWikitext(unittest.TestCase):
             "<translate>This is already translated.</translate>"
         )
 
+    def test_interwiki_phab_link(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("[[phab:T2001]]"),
+            "<translate>[[<tvar name=0>Phab:T2001</tvar>|phab:T2001]]</translate>"
+        )
+
+    def test_interwiki_meta_link(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("[[m:Main Page]]"),
+            "<translate>[[<tvar name=0>M:Main Page</tvar>|m:Main Page]]</translate>"
+        )
+
+    def test_interwiki_link_with_label(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("[[phab:T2001|T2001 ticket]]"),
+            "<translate>[[<tvar name=0>Phab:T2001</tvar>|T2001 ticket]]</translate>"
+        )
+
+    def test_interwiki_links_inline(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext(
+                "Example phab: [[phab:T2001]]\n\nExample meta: [[m:Main Page]]"
+            ),
+            "<translate>Example phab: [[<tvar name=0>Phab:T2001</tvar>|phab:T2001]]\n\nExample meta: [[<tvar name=1>M:Main Page</tvar>|m:Main Page]]</translate>"
+        )
+
 if __name__ == '__main__':
     unittest.main(exit=False, failfast=True)

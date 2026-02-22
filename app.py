@@ -463,6 +463,20 @@ def process_double_brackets(text, tvar_id=0):
     file_aliases = ['File:', 'file:', 'Image:', 'image:']
     skip_namespaces = category_aliases + file_aliases + ['Special:', 'User:', 'User talk:']
 
+    # Known internal MediaWiki namespace prefixes — anything else with a colon is an interwiki link
+    internal_namespaces = {
+        'Talk:', 'talk:', 'User:', 'user:', 'User talk:', 'user talk:',
+        'Project:', 'project:', 'Project talk:', 'project talk:',
+        'File:', 'file:', 'File talk:', 'file talk:',
+        'MediaWiki:', 'mediawiki:', 'MediaWiki talk:', 'mediawiki talk:',
+        'Template:', 'template:', 'Template talk:', 'template talk:',
+        'Help:', 'help:', 'Help talk:', 'help talk:',
+        'Category:', 'category:', 'Category talk:', 'category talk:',
+        'Special:', 'special:', 'Media:', 'media:',
+        'Image:', 'image:', 'Image talk:', 'image talk:',
+        'Cat:', 'cat:',
+    }
+
     ns = None
     if ':' in parts[0]:
         ns = parts[0].split(':', 1)[0] + ':'
@@ -474,6 +488,11 @@ def process_double_brackets(text, tvar_id=0):
         return _process_file(text)
     if ns in skip_namespaces:
         return text, double_brackets_types.special if ns == 'Special:' else double_brackets_types.wikilink
+    # Interwiki links: colon-prefixed but not a known internal MediaWiki namespace
+    if ns is not None and ns not in internal_namespaces:
+        link_target = capitalise_first_letter(parts[0])
+        display_text = parts[0] if len(parts) == 1 else parts[1]
+        return f'[[<tvar name={tvar_id}>{link_target}</tvar>|{display_text}]]', double_brackets_types.wikilink
     if len(parts) == 1:
         return f'[[<tvar name={tvar_id}>Special:MyLanguage</tvar>/{capitalise_first_letter(parts[0])}|{parts[0]}]]', double_brackets_types.wikilink
     if len(parts) == 2:
