@@ -10,6 +10,20 @@ from mwparserfromhell.nodes import Tag
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
+CSP_POLICY = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' https://tools-static.wmflabs.org; "
+    "style-src 'self' 'unsafe-inline' https://tools-static.wmflabs.org; "
+    "connect-src 'self' https://api.github.com; "
+    "img-src 'self' data:; "
+    "font-src 'self' https://tools-static.wmflabs.org data:"
+)
+
+@app.after_request
+def set_security_headers(response):
+    response.headers['Content-Security-Policy'] = CSP_POLICY
+    return response
+
 behaviour_switches = ['__NOTOC__', '__FORCETOC__', '__TOC__', '__NOEDITSECTION__', '__NEWSECTIONLINK__', '__NONEWSECTIONLINK__', '__NOGALLERY__', '__HIDDENCAT__', '__EXPECTUNUSEDCATEGORY__', '__NOCONTENTCONVERT__', '__NOCC__', '__NOTITLECONVERT__', '__NOTC__', '__START__', '__END__', '__INDEX__', '__NOINDEX__', '__STATICREDIRECT__', '__EXPECTUNUSEDTEMPLATE__', '__NOGLOBAL__', '__DISAMBIG__', '__EXPECTED_UNCONNECTED_PAGE__', '__ARCHIVEDTALK__', '__NOTALK__', '__EXPECTWITHOUTSCANS__']
 
 # --- Helper Functions for Processing Different Wikitext Elements ---
