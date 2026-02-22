@@ -516,7 +516,8 @@ def process_template(text):
 # --- Section Heading Handler ---
 def process_section_heading(text):
     """
-    Processes section headings like ==Title== and wraps the heading text in <translate> tags.
+    Processes section headings like ==Title== and wraps the entire heading in <translate> tags,
+    with the tags on their own lines per MediaWiki translation guidelines.
     """
     # Match ==Title==, ===Subsection===, etc.
     match = re.match(r'^(=+)([^=]+)(=+)$', text.strip())
@@ -524,8 +525,8 @@ def process_section_heading(text):
         return text
     level = match.group(1)
     heading_text = match.group(2).strip()
-    # Reconstruct with same number of = on both sides
-    return f'{level}<translate>{heading_text}</translate>{level}'
+    # Wrap the entire heading (including == markers) in <translate> tags on their own lines
+    return f'<translate>\n{level}{heading_text}{level}\n</translate>'
 
 def process_raw_url(text):
     """

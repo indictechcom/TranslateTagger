@@ -38,3 +38,10 @@ instance/
 *.pylint.d/
 *.pydist/
 *.pytest_cache/
+*.cache/
+*.coverage.*
+*.bak
+*.tmp
+*.swp
+*.swo
+*.swn

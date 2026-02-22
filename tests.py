@@ -6,7 +6,19 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_section_headers(self):
         self.assertEqual(
             convert_to_translatable_wikitext("==HELLO=="),
-            "<translate>==HELLO==</translate>"  # Removed the \n\n that was expected
+            "<translate>\n==HELLO==\n</translate>"
+        )
+
+    def test_section_heading_strips_spaces(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("== Example =="),
+            "<translate>\n==Example==\n</translate>"
+        )
+
+    def test_section_headings_multiple_levels_with_body(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("== Example ==\n\nlorem ipsum\n\n=== Second example ===\n\nlorem ipsum"),
+            "<translate>\n==Example==\n</translate>\n\n<translate>lorem ipsum</translate>\n\n<translate>\n===Second example===\n</translate>\n\n<translate>lorem ipsum</translate>"
         )
 
     def test_file_tag_translations(self):
