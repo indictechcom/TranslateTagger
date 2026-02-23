@@ -3,12 +3,43 @@ from flask_cors import CORS  # Import flask-cors
 import re
 from enum import Enum
 import sys
+import requests as http_requests
+from datetime import datetime
 
 import mwparserfromhell
 from mwparserfromhell.nodes import Tag
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+CSP_POLICY = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' https://tools-static.wmflabs.org; "
+    "style-src 'self' 'unsafe-inline' https://tools-static.wmflabs.org; "
+    "connect-src 'self' https://tools-static.wmflabs.org; "
+    "img-src 'self' data:; "
+    "font-src 'self' https://tools-static.wmflabs.org data:"
+)
+
+def get_last_updated_date():
+    try:
+        resp = http_requests.get(
+            "https://api.github.com/repos/indictechcom/translatable-wikitext-converter/commits",
+            timeout=5,
+        )
+        data = resp.json()
+        if data and isinstance(data, list) and len(data) > 0:
+            raw = data[0]["commit"]["committer"]["date"]
+            dt = datetime.strptime(raw, "%Y-%m-%dT%H:%M:%SZ")
+            return dt.strftime("%B %-d, %Y")
+    except Exception:
+        pass
+    return "Unavailable"
+
+@app.after_request
+def set_security_headers(response):
+    response.headers['Content-Security-Policy'] = CSP_POLICY
+    return response
 
 behaviour_switches = ['__NOTOC__', '__FORCETOC__', '__TOC__', '__NOEDITSECTION__', '__NEWSECTIONLINK__', '__NONEWSECTIONLINK__', '__NOGALLERY__', '__HIDDENCAT__', '__EXPECTUNUSEDCATEGORY__', '__NOCONTENTCONVERT__', '__NOCC__', '__NOTITLECONVERT__', '__NOTC__', '__START__', '__END__', '__INDEX__', '__NOINDEX__', '__STATICREDIRECT__', '__EXPECTUNUSEDTEMPLATE__', '__NOGLOBAL__', '__DISAMBIG__', '__EXPECTED_UNCONNECTED_PAGE__', '__ARCHIVEDTALK__', '__NOTALK__', '__EXPECTWITHOUTSCANS__']
 
@@ -933,17 +964,17 @@ def convert_to_translatable_wikitext(wikitext):
 
 @app.route('/')
 def index():
-    return render_template('home.html')
+    return render_template('home.html', last_updated=get_last_updated_date())
 
 @app.route('/convert', methods=['GET'])
 def redirect_to_home():
-    return render_template('home.html')
+    return render_template('home.html', last_updated=get_last_updated_date())
 
 @app.route('/convert', methods=['POST'])
 def convert():
     wikitext = request.form.get('wikitext', '')
     converted_text = convert_to_translatable_wikitext(wikitext)
-    return render_template('home.html', original=wikitext, converted=converted_text)
+    return render_template('home.html', original=wikitext, converted=converted_text, last_updated=get_last_updated_date())
 
 @app.route('/api/convert', methods=['GET', 'POST'])
 def api_convert():
