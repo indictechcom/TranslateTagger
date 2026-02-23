@@ -16,7 +16,7 @@ CSP_POLICY = (
     "default-src 'self'; "
     "script-src 'self' 'unsafe-inline' https://tools-static.wmflabs.org; "
     "style-src 'self' 'unsafe-inline' https://tools-static.wmflabs.org; "
-    "connect-src 'self'; "
+    "connect-src 'self' https://tools-static.wmflabs.org; "
     "img-src 'self' data:; "
     "font-src 'self' https://tools-static.wmflabs.org data:"
 )
