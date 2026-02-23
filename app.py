@@ -3,6 +3,8 @@ from flask_cors import CORS  # Import flask-cors
 import re
 from enum import Enum
 import sys
+import requests as http_requests
+from datetime import datetime
 
 import mwparserfromhell
 from mwparserfromhell.nodes import Tag
@@ -14,10 +16,25 @@ CSP_POLICY = (
     "default-src 'self'; "
     "script-src 'self' 'unsafe-inline' https://tools-static.wmflabs.org; "
     "style-src 'self' 'unsafe-inline' https://tools-static.wmflabs.org; "
-    "connect-src 'self' https://api.github.com; "
+    "connect-src 'self'; "
     "img-src 'self' data:; "
     "font-src 'self' https://tools-static.wmflabs.org data:"
 )
+
+def get_last_updated_date():
+    try:
+        resp = http_requests.get(
+            "https://api.github.com/repos/indictechcom/translatable-wikitext-converter/commits",
+            timeout=5,
+        )
+        data = resp.json()
+        if data and isinstance(data, list) and len(data) > 0:
+            raw = data[0]["commit"]["committer"]["date"]
+            dt = datetime.strptime(raw, "%Y-%m-%dT%H:%M:%SZ")
+            return dt.strftime("%B %-d, %Y")
+    except Exception:
+        pass
+    return "Unavailable"
 
 @app.after_request
 def set_security_headers(response):
@@ -947,17 +964,17 @@ def convert_to_translatable_wikitext(wikitext):
 
 @app.route('/')
 def index():
-    return render_template('home.html')
+    return render_template('home.html', last_updated=get_last_updated_date())
 
 @app.route('/convert', methods=['GET'])
 def redirect_to_home():
-    return render_template('home.html')
+    return render_template('home.html', last_updated=get_last_updated_date())
 
 @app.route('/convert', methods=['POST'])
 def convert():
     wikitext = request.form.get('wikitext', '')
     converted_text = convert_to_translatable_wikitext(wikitext)
-    return render_template('home.html', original=wikitext, converted=converted_text)
+    return render_template('home.html', original=wikitext, converted=converted_text, last_updated=get_last_updated_date())
 
 @app.route('/api/convert', methods=['GET', 'POST'])
 def api_convert():
