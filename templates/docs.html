@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TranslateTagger — Documentation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" />
+    <style>
+      :root {
+        --tutorial-color: #0d6efd;
+        --howto-color: #198754;
+        --reference-color: #6f42c1;
+        --explanation-color: #fd7e14;
+        --sidebar-width: 260px;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #f8f9fa;
+        color: #212529;
+      }
+
+      /* ── Navbar ── */
+      .docs-navbar {
+        background: #fff;
+        border-bottom: 1px solid #dee2e6;
+        padding: 0.75rem 1.5rem;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0,0,0,.06);
+      }
+
+      .docs-navbar .brand {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #212529;
+        text-decoration: none;
+      }
+
+      .docs-navbar .brand span {
+        color: #0d6efd;
+      }
+
+      /* ── Layout ── */
+      .docs-layout {
+        display: flex;
+        min-height: calc(100vh - 56px);
+      }
+
+      /* ── Sidebar ── */
+      .docs-sidebar {
+        width: var(--sidebar-width);
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid #dee2e6;
+        padding: 1.5rem 0;
+        position: sticky;
+        top: 56px;
+        height: calc(100vh - 56px);
+        overflow-y: auto;
+      }
+
+      .sidebar-section {
+        margin-bottom: 1.25rem;
+      }
+
+      .sidebar-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0 1.25rem 0.35rem;
+        color: #6c757d;
+      }
+
+      .sidebar-nav a {
+        display: block;
+        padding: 0.35rem 1.25rem;
+        font-size: 0.875rem;
+        color: #495057;
+        text-decoration: none;
+        border-left: 3px solid transparent;
+        transition: all 0.15s;
+      }
+
+      .sidebar-nav a:hover {
+        background: #f0f4ff;
+        color: #0d6efd;
+      }
+
+      .sidebar-nav a.active {
+        color: #0d6efd;
+        border-left-color: #0d6efd;
+        background: #f0f4ff;
+        font-weight: 500;
+      }
+
+      .sidebar-nav a.howto-link:hover,
+      .sidebar-nav a.howto-link.active { color: var(--howto-color); border-left-color: var(--howto-color); background: #f0fff4; }
+      .sidebar-nav a.reference-link:hover,
+      .sidebar-nav a.reference-link.active { color: var(--reference-color); border-left-color: var(--reference-color); background: #f8f0ff; }
+      .sidebar-nav a.explanation-link:hover,
+      .sidebar-nav a.explanation-link.active { color: var(--explanation-color); border-left-color: var(--explanation-color); background: #fff8f0; }
+
+      /* ── Main content ── */
+      .docs-main {
+        flex: 1;
+        min-width: 0;
+        padding: 2.5rem 3rem;
+        max-width: 860px;
+      }
+
+      /* ── Hero ── */
+      .docs-hero {
+        background: linear-gradient(135deg, #0d6efd 0%, #6f42c1 100%);
+        color: #fff;
+        border-radius: 12px;
+        padding: 2.5rem 2rem;
+        margin-bottom: 3rem;
+      }
+
+      .docs-hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+      .docs-hero p  { opacity: 0.9; margin-bottom: 1.25rem; font-size: 1.05rem; }
+
+      .quadrant-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 0.5rem;
+      }
+
+      .quadrant-card {
+        background: rgba(255,255,255,.15);
+        border-radius: 8px;
+        padding: 1rem;
+        text-decoration: none;
+        color: #fff;
+        transition: background 0.2s;
+        border: 1px solid rgba(255,255,255,.2);
+      }
+
+      .quadrant-card:hover { background: rgba(255,255,255,.25); color: #fff; }
+      .quadrant-card strong { display: block; font-size: 0.95rem; margin-bottom: 0.25rem; }
+      .quadrant-card span { font-size: 0.8rem; opacity: 0.85; }
+
+      /* ── Section headings ── */
+      .docs-section {
+        margin-bottom: 3.5rem;
+        scroll-margin-top: 76px;
+      }
+
+      .section-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        margin-bottom: 0.5rem;
+      }
+
+      .badge-tutorial    { background: #dbeafe; color: #1d4ed8; }
+      .badge-howto       { background: #dcfce7; color: #166534; }
+      .badge-reference   { background: #ede9fe; color: #5b21b6; }
+      .badge-explanation { background: #ffedd5; color: #9a3412; }
+
+      .docs-section h2 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dee2e6;
+      }
+
+      .docs-section h3 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-top: 2rem;
+        margin-bottom: 0.75rem;
+        color: #343a40;
+      }
+
+      .docs-section h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: #495057;
+      }
+
+      /* ── Tutorial steps ── */
+      .step-list { counter-reset: step-counter; list-style: none; padding: 0; }
+      .step-list li {
+        counter-increment: step-counter;
+        position: relative;
+        padding: 0.75rem 1rem 0.75rem 3.25rem;
+        margin-bottom: 0.75rem;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+      }
+      .step-list li::before {
+        content: counter(step-counter);
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1.6rem;
+        height: 1.6rem;
+        background: var(--tutorial-color);
+        color: #fff;
+        border-radius: 50%;
+        font-size: 0.8rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.6rem;
+        text-align: center;
+      }
+
+      /* ── Code blocks ── */
+      pre {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        overflow-x: auto;
+        font-size: 0.85rem;
+      }
+
+      code.inline {
+        background: #f0f0f0;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.875em;
+        color: #c7254e;
+      }
+
+      /* ── Before/after example ── */
+      .example-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1.25rem 0;
+      }
+
+      .example-box {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .example-box-header {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.45rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .example-box-header.input  { background: #f8f9fa; color: #6c757d; }
+      .example-box-header.output { background: #e8f5e9; color: #1b5e20; }
+
+      .example-box pre {
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        margin: 0;
+        padding: 0.85rem 1rem;
+        font-size: 0.8rem;
+      }
+
+      /* ── Reference table ── */
+      .ref-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .ref-table th {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 0.6rem 0.85rem;
+        text-align: left;
+        font-weight: 600;
+      }
+
+      .ref-table td {
+        border: 1px solid #dee2e6;
+        padding: 0.6rem 0.85rem;
+        vertical-align: top;
+      }
+
+      .ref-table tr:nth-child(even) td { background: #fafafa; }
+
+      /* ── Callout ── */
+      .callout {
+        border-left: 4px solid;
+        padding: 0.85rem 1.1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1.25rem 0;
+        font-size: 0.9rem;
+      }
+
+      .callout-tip  { border-color: var(--howto-color); background: #f0fff4; }
+      .callout-info { border-color: var(--tutorial-color); background: #eff6ff; }
+      .callout-warn { border-color: var(--explanation-color); background: #fff7ed; }
+
+      .callout strong { display: block; margin-bottom: 0.25rem; }
+
+      /* ── Footer ── */
+      .docs-footer {
+        text-align: center;
+        padding: 1.25rem;
+        font-size: 0.8rem;
+        color: #6c757d;
+        border-top: 1px solid #dee2e6;
+        background: #fff;
+        margin-top: 2rem;
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 768px) {
+        .docs-sidebar { display: none; }
+        .docs-main { padding: 1.25rem 1rem; }
+        .quadrant-grid { grid-template-columns: 1fr; }
+        .example-pair { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Navbar -->
+    <nav class="docs-navbar d-flex align-items-center justify-content-between">
+      <a class="brand" href="/docs">Translate<span>Tagger</span> Docs</a>
+      <div class="d-flex gap-3 align-items-center">
+        <a href="/" class="btn btn-sm btn-primary">Open Tool</a>
+        <a href="https://github.com/indictechcom/translatable-wikitext-converter" target="_blank"
+           class="btn btn-sm btn-outline-secondary">GitHub</a>
+      </div>
+    </nav>
+
+    <div class="docs-layout">
+
+      <!-- Sidebar -->
+      <aside class="docs-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Overview</div>
+          <nav class="sidebar-nav">
+            <a href="#overview" class="active">What is TranslateTagger?</a>
+          </nav>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Tutorial</div>
+          <nav class="sidebar-nav">
+            <a href="#tutorial-prepare">Prepare a page for translation</a>
+          </nav>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">How-to Guides</div>
+          <nav class="sidebar-nav">
+            <a href="#howto-convert" class="howto-link">Convert an existing page</a>
+            <a href="#howto-complex" class="howto-link">Handle complex wikitext</a>
+            <a href="#howto-api" class="howto-link">Use the JSON API</a>
+            <a href="#howto-userscript" class="howto-link">Use as a UserScript</a>
+          </nav>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Reference</div>
+          <nav class="sidebar-nav">
+            <a href="#ref-features" class="reference-link">Supported elements</a>
+            <a href="#ref-api" class="reference-link">API reference</a>
+            <a href="#ref-behaviour" class="reference-link">Behaviour switches</a>
+          </nav>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Explanation</div>
+          <nav class="sidebar-nav">
+            <a href="#explanation-why" class="explanation-link">Why TranslateTagger?</a>
+            <a href="#explanation-how" class="explanation-link">How it works</a>
+            <a href="#explanation-tvar" class="explanation-link">tvar tags explained</a>
+          </nav>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Project</div>
+          <nav class="sidebar-nav">
+            <a href="#contributing">Contributing</a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main class="docs-main">
+
+        <!-- Hero -->
+        <div class="docs-hero" id="overview">
+          <h1>TranslateTagger Documentation</h1>
+          <p>Automatically convert standard wikitext into translation-ready format for the MediaWiki Translate extension — in one click.</p>
+          <div class="quadrant-grid">
+            <a href="#tutorial-prepare" class="quadrant-card">
+              <strong>Tutorial</strong>
+              <span>Step-by-step: prepare your first page</span>
+            </a>
+            <a href="#howto-convert" class="quadrant-card">
+              <strong>How-to Guides</strong>
+              <span>Task-focused guides for common workflows</span>
+            </a>
+            <a href="#ref-features" class="quadrant-card">
+              <strong>Reference</strong>
+              <span>Complete element and API reference</span>
+            </a>
+            <a href="#explanation-why" class="quadrant-card">
+              <strong>Explanation</strong>
+              <span>Understand why and how the tool works</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════
+             TUTORIAL
+        ════════════════════════════════ -->
+        <section class="docs-section" id="tutorial-prepare">
+          <span class="section-badge badge-tutorial">Tutorial</span>
+          <h2>Prepare a page for translation</h2>
+          <p>This tutorial walks you through making your first page ready for the MediaWiki Translate extension using TranslateTagger. By the end you will have wikitext with proper <code class="inline">&lt;translate&gt;</code> tags that editors can immediately start translating.</p>
+
+          <div class="callout callout-info">
+            <strong>Before you start</strong>
+            You need a wiki page whose raw wikitext you can copy. You do not need any account or software — only a browser.
+          </div>
+
+          <h3>Step 1 — Copy the raw wikitext</h3>
+          <p>Open the wiki page you want to prepare. Click <strong>Edit</strong> (or <strong>Edit source</strong>), select all the wikitext in the editor, and copy it.</p>
+
+          <h3>Step 2 — Open TranslateTagger</h3>
+          <p>Visit <a href="https://translatetagger.toolforge.org/" target="_blank">translatetagger.toolforge.org</a>. You will see two text areas: <em>Input</em> on the left and <em>Output</em> on the right.</p>
+
+          <h3>Step 3 — Paste your wikitext</h3>
+          <p>Click inside the left textarea and paste (<kbd>Ctrl</kbd>+<kbd>V</kbd> or <kbd>Cmd</kbd>+<kbd>V</kbd>) the wikitext you copied.</p>
+
+          <h3>Step 4 — Convert</h3>
+          <p>Click the <strong>Convert to Translatable Wikitext</strong> button. The right panel fills with your wikitext wrapped in <code class="inline">&lt;translate&gt;</code> tags.</p>
+
+          <h3>Step 5 — Review the output</h3>
+          <p>Scan the output. Links will have become <code class="inline">[[Special:MyLanguage/…]]</code>, and dynamic values will be wrapped in <code class="inline">&lt;tvar&gt;</code> tags. The translatable prose appears inside <code class="inline">&lt;translate&gt;…&lt;/translate&gt;</code> blocks.</p>
+
+          <div class="example-pair">
+            <div class="example-box">
+              <div class="example-box-header input">Input wikitext</div>
+              <pre>Welcome to the [[Wikimedia|Wikimedia Foundation]]!
+Visit [https://wikimediafoundation.org our site].</pre>
+            </div>
+            <div class="example-box">
+              <div class="example-box-header output">Output (translatable)</div>
+              <pre>&lt;translate&gt;Welcome to the [[Special:MyLanguage/Wikimedia|&lt;tvar name="1"&gt;Wikimedia Foundation&lt;/tvar&gt;]]!
+Visit [&lt;tvar name="2"&gt;https://wikimediafoundation.org&lt;/tvar&gt; our site].&lt;/translate&gt;</pre>
+            </div>
+          </div>
+
+          <h3>Step 6 — Copy and paste back into the wiki</h3>
+          <p>Click <strong>Copy to Clipboard</strong>. Go back to your wiki editor, select all, and paste the converted wikitext. Save the page, then use <strong>Mark this page for translation</strong> to activate the Translate extension.</p>
+
+          <div class="callout callout-tip">
+            <strong>You're done!</strong>
+            The page is now ready for community translators. Each <code class="inline">&lt;translate&gt;</code> block becomes a separate translation unit in the Translate extension.
+          </div>
+        </section>
+
+        <!-- ════════════════════════════════
+             HOW-TO GUIDES
+        ════════════════════════════════ -->
+        <section class="docs-section" id="howto-convert">
+          <span class="section-badge badge-howto">How-to Guide</span>
+          <h2>Convert an existing page to a translatable format</h2>
+          <p>Use this guide when a page already exists and you need to make it translatable without altering its visible content.</p>
+
+          <ol class="step-list">
+            <li>Open the page and go to <strong>Edit source</strong>.</li>
+            <li>Select all the wikitext and copy it.</li>
+            <li>Open <a href="https://translatetagger.toolforge.org/" target="_blank">TranslateTagger</a> and paste into the input area.</li>
+            <li>Click <strong>Convert to Translatable Wikitext</strong>.</li>
+            <li>Click <strong>Copy to Clipboard</strong>.</li>
+            <li>Return to the wiki editor, replace the entire content with the copied output, and save.</li>
+            <li>On the page, click <strong>Mark this page for translation</strong> to activate the Translate extension.</li>
+          </ol>
+
+          <div class="callout callout-warn">
+            <strong>Note on existing translate tags</strong>
+            If the page already contains <code class="inline">&lt;translate&gt;</code> tags, TranslateTagger will skip conversion and return the input unchanged. Remove any existing tags first if you need a full re-conversion.
+          </div>
+        </section>
+
+        <section class="docs-section" id="howto-complex">
+          <span class="section-badge badge-howto">How-to Guide</span>
+          <h2>Handle complex wikitext safely</h2>
+          <p>TranslateTagger handles all standard wikitext structures automatically. You do <strong>not</strong> need to simplify the wikitext before conversion.</p>
+
+          <h3>Supported complex structures</h3>
+          <table class="ref-table">
+            <thead>
+              <tr><th>Structure</th><th>How it is handled</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Templates <code class="inline">&#123;&#123;…&#125;&#125;</code></td><td>Preserved verbatim inside <code class="inline">&lt;tvar&gt;</code> tags — not wrapped for translation.</td></tr>
+              <tr><td>Tables <code class="inline">{|…|}</code></td><td>Cell content is wrapped; table markup and attributes are preserved.</td></tr>
+              <tr><td>Internal links <code class="inline">[[Page|Label]]</code></td><td>Page name becomes <code class="inline">Special:MyLanguage/Page</code>; label is translatable.</td></tr>
+              <tr><td>External links <code class="inline">[URL text]</code></td><td>URL is placed in a <code class="inline">&lt;tvar&gt;</code>; anchor text is translatable.</td></tr>
+              <tr><td>Code / syntaxhighlight</td><td>Content of code blocks is preserved and not translated.</td></tr>
+              <tr><td>Section headings <code class="inline">==Title==</code></td><td>Entire heading line is wrapped in a single <code class="inline">&lt;translate&gt;</code> block.</td></tr>
+              <tr><td>List items <code class="inline">* # ; :</code></td><td>List marker is preserved; item text is wrapped for translation.</td></tr>
+              <tr><td>File / image embeds</td><td>File name placed in <code class="inline">&lt;tvar&gt;</code>; caption and alt text are translatable.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="docs-section" id="howto-api">
+          <span class="section-badge badge-howto">How-to Guide</span>
+          <h2>Use the JSON API</h2>
+          <p>Automate conversion in scripts or bots by calling the <code class="inline">/api/convert</code> endpoint.</p>
+
+          <h3>Send a conversion request</h3>
+          <pre><code>curl -X POST https://translatetagger.toolforge.org/api/convert \
+  -H "Content-Type: application/json" \
+  -d '{"wikitext": "Hello [[World|world]]."}'</code></pre>
+
+          <h3>Example response</h3>
+          <pre><code>{
+  "converted_text": "&lt;translate&gt;Hello [[Special:MyLanguage/World|world]].&lt;/translate&gt;"
+}</code></pre>
+
+          <h3>Python example</h3>
+          <pre><code>import requests
+
+response = requests.post(
+    "https://translatetagger.toolforge.org/api/convert",
+    json={"wikitext": "Hello [[World|world]]."}
+)
+print(response.json()["converted_text"])</code></pre>
+
+          <div class="callout callout-tip">
+            <strong>Rate limits</strong>
+            The tool runs on Wikimedia Toolforge. Respect standard Toolforge usage policies and avoid sending large batches in tight loops.
+          </div>
+        </section>
+
+        <section class="docs-section" id="howto-userscript">
+          <span class="section-badge badge-howto">How-to Guide</span>
+          <h2>Use as a UserScript (in-wiki)</h2>
+          <p>You can run TranslateTagger directly inside the MediaWiki editor via a gadget/UserScript, without leaving the wiki.</p>
+
+          <ol class="step-list">
+            <li>Open your <strong>common.js</strong> page (e.g., <code class="inline">Special:MyPage/common.js</code>).</li>
+            <li>Add the following import line and save:
+              <pre><code>mw.loader.load('//www.mediawiki.org/w/index.php?title=MediaWiki:Gadget-TranslateTagger.js&action=raw&ctype=text/javascript');</code></pre>
+            </li>
+            <li>Open any page for editing — a <strong>TranslateTagger</strong> button will appear in the toolbar.</li>
+            <li>Click it to convert the editor contents in place.</li>
+          </ol>
+        </section>
+
+        <!-- ════════════════════════════════
+             REFERENCE
+        ════════════════════════════════ -->
+        <section class="docs-section" id="ref-features">
+          <span class="section-badge badge-reference">Reference</span>
+          <h2>Supported wikitext elements</h2>
+          <p>Complete list of wikitext constructs TranslateTagger recognises and how each is transformed.</p>
+
+          <table class="ref-table">
+            <thead>
+              <tr><th>Element</th><th>Input example</th><th>Output</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Plain text paragraph</td>
+                <td><code class="inline">Hello world.</code></td>
+                <td><code class="inline">&lt;translate&gt;Hello world.&lt;/translate&gt;</code></td>
+              </tr>
+              <tr>
+                <td>Section heading</td>
+                <td><code class="inline">== Introduction ==</code></td>
+                <td><code class="inline">&lt;translate&gt;== Introduction ==&lt;/translate&gt;</code></td>
+              </tr>
+              <tr>
+                <td>Internal link with label</td>
+                <td><code class="inline">[[Page|Label]]</code></td>
+                <td><code class="inline">[[Special:MyLanguage/Page|&lt;tvar name="n"&gt;Label&lt;/tvar&gt;]]</code></td>
+              </tr>
+              <tr>
+                <td>Internal link without label</td>
+                <td><code class="inline">[[Page name]]</code></td>
+                <td><code class="inline">[[Special:MyLanguage/Page name|Page name]]</code></td>
+              </tr>
+              <tr>
+                <td>External link</td>
+                <td><code class="inline">[https://example.org Visit us]</code></td>
+                <td><code class="inline">[&lt;tvar name="n"&gt;https://example.org&lt;/tvar&gt; Visit us]</code></td>
+              </tr>
+              <tr>
+                <td>Interwiki link</td>
+                <td><code class="inline">[[en:Article]]</code></td>
+                <td>Preserved in <code class="inline">&lt;tvar&gt;</code></td>
+              </tr>
+              <tr>
+                <td>Template</td>
+                <td><code class="inline">&#123;&#123;Template|arg&#125;&#125;</code></td>
+                <td>Preserved verbatim in <code class="inline">&lt;tvar&gt;</code></td>
+              </tr>
+              <tr>
+                <td>File embed</td>
+                <td><code class="inline">[[File:Image.png|Caption]]</code></td>
+                <td>Filename in <code class="inline">&lt;tvar&gt;</code>; caption wrapped in <code class="inline">&lt;translate&gt;</code></td>
+              </tr>
+              <tr>
+                <td>Table cell</td>
+                <td><code class="inline">| Cell text</code></td>
+                <td>Cell text wrapped in <code class="inline">&lt;translate&gt;</code></td>
+              </tr>
+              <tr>
+                <td>List items <code class="inline">* # ; :</code></td>
+                <td><code class="inline">* Item text</code></td>
+                <td><code class="inline">* &lt;translate&gt;Item text&lt;/translate&gt;</code></td>
+              </tr>
+              <tr>
+                <td>Blockquote</td>
+                <td><code class="inline">&lt;blockquote&gt;…&lt;/blockquote&gt;</code></td>
+                <td>Content inside wrapped in <code class="inline">&lt;translate&gt;</code></td>
+              </tr>
+              <tr>
+                <td>Code block / syntaxhighlight</td>
+                <td><code class="inline">&lt;syntaxhighlight lang="python"&gt;…</code></td>
+                <td>Content preserved, not translated</td>
+              </tr>
+              <tr>
+                <td><code class="inline">&lt;nowiki&gt;</code></td>
+                <td><code class="inline">&lt;nowiki&gt;…&lt;/nowiki&gt;</code></td>
+                <td>Preserved verbatim</td>
+              </tr>
+              <tr>
+                <td>Math</td>
+                <td><code class="inline">&lt;math&gt;E=mc^2&lt;/math&gt;</code></td>
+                <td>Preserved verbatim in <code class="inline">&lt;tvar&gt;</code></td>
+              </tr>
+              <tr>
+                <td>Behaviour switches</td>
+                <td><code class="inline">__NOTOC__</code></td>
+                <td>Preserved verbatim, not wrapped</td>
+              </tr>
+              <tr>
+                <td>Emoji</td>
+                <td><code class="inline">🎉</code></td>
+                <td>Excluded from translation wrapping</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="docs-section" id="ref-api">
+          <span class="section-badge badge-reference">Reference</span>
+          <h2>API reference</h2>
+
+          <h3>Endpoints</h3>
+          <table class="ref-table">
+            <thead>
+              <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="inline">GET</code></td>
+                <td><code class="inline">/</code></td>
+                <td>Serves the web UI.</td>
+              </tr>
+              <tr>
+                <td><code class="inline">POST</code></td>
+                <td><code class="inline">/convert</code></td>
+                <td>Form-based conversion. Field: <code class="inline">wikitext</code>. Returns rendered HTML page with output.</td>
+              </tr>
+              <tr>
+                <td><code class="inline">POST</code></td>
+                <td><code class="inline">/api/convert</code></td>
+                <td>JSON API. Request body: <code class="inline">{"wikitext": "…"}</code>. Returns <code class="inline">{"converted_text": "…"}</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Request body — <code class="inline">POST /api/convert</code></h3>
+          <table class="ref-table">
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="inline">wikitext</code></td>
+                <td>string</td>
+                <td>Yes</td>
+                <td>The raw wikitext to convert.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Response — <code class="inline">POST /api/convert</code></h3>
+          <table class="ref-table">
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="inline">converted_text</code></td>
+                <td>string</td>
+                <td>The converted wikitext with <code class="inline">&lt;translate&gt;</code> tags.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Error responses</h3>
+          <table class="ref-table">
+            <thead>
+              <tr><th>HTTP status</th><th>Condition</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="inline">400</code></td><td>Missing or invalid JSON body, or missing <code class="inline">wikitext</code> field.</td></tr>
+              <tr><td><code class="inline">500</code></td><td>Internal conversion error.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="docs-section" id="ref-behaviour">
+          <span class="section-badge badge-reference">Reference</span>
+          <h2>Behaviour switches</h2>
+          <p>The following MediaWiki behaviour switches are recognised and passed through unchanged (not wrapped in translation tags):</p>
+          <pre><code>__NOTOC__  __FORCETOC__  __TOC__  __NOEDITSECTION__  __NEWSECTIONLINK__
+__NONEWSECTIONLINK__  __NOGALLERY__  __HIDDENCAT__  __NOCONTENTCONVERT__
+__NOTITLECONVERT__  __INDEX__  __NOINDEX__  __STATICREDIRECT__  __DISAMBIG__</code></pre>
+        </section>
+
+        <!-- ════════════════════════════════
+             EXPLANATION
+        ════════════════════════════════ -->
+        <section class="docs-section" id="explanation-why">
+          <span class="section-badge badge-explanation">Explanation</span>
+          <h2>Why TranslateTagger exists</h2>
+          <p>The MediaWiki <a href="https://www.mediawiki.org/wiki/Extension:Translate" target="_blank">Translate extension</a> requires pages to be explicitly marked up with <code class="inline">&lt;translate&gt;</code> tags before they can be translated. Doing this by hand is:</p>
+          <ul>
+            <li><strong>Slow</strong> — every paragraph, heading, and list item needs individual attention.</li>
+            <li><strong>Error-prone</strong> — a single misplaced tag can break the entire page structure.</li>
+            <li><strong>Inaccessible</strong> — volunteer editors unfamiliar with the tag syntax are blocked from contributing.</li>
+          </ul>
+          <p>TranslateTagger automates the tagging step so that editors can focus on content and translation coordination, not markup mechanics. It is especially useful for recurring Wikimedia events (Wikimania, Hackathons) where dozens of pages need preparation on a short timeline.</p>
+        </section>
+
+        <section class="docs-section" id="explanation-how">
+          <span class="section-badge badge-explanation">Explanation</span>
+          <h2>How it works</h2>
+          <p>TranslateTagger uses a <strong>two-pass, cursor-based tokenizer</strong> to process wikitext:</p>
+
+          <h3>Pass 1 — Tokenization</h3>
+          <p>The input string is scanned character-by-character. When a known delimiter is encountered (e.g., <code class="inline">[[</code>, <code class="inline">&#123;&#123;</code>, <code class="inline">==</code>, <code class="inline">&lt;</code>), a specialized handler function is called to consume that element and return a transformed token. The cursor advances past the consumed characters.</p>
+
+          <h3>Pass 2 — Merging</h3>
+          <p>Adjacent translatable text tokens are merged into a single <code class="inline">&lt;translate&gt;</code> block. Non-translatable tokens (templates, code blocks, math) are kept as-is between translation blocks.</p>
+
+          <h3>Handler functions</h3>
+          <table class="ref-table">
+            <thead><tr><th>Handler</th><th>Handles</th></tr></thead>
+            <tbody>
+              <tr><td><code class="inline">process_double_brackets()</code></td><td><code class="inline">[[links]]</code> and file/image embeds</td></tr>
+              <tr><td><code class="inline">process_external_link()</code></td><td><code class="inline">[http://… text]</code></td></tr>
+              <tr><td><code class="inline">process_section_heading()</code></td><td><code class="inline">== Title ==</code></td></tr>
+              <tr><td><code class="inline">process_template()</code></td><td><code class="inline">&#123;&#123;templates&#125;&#125;</code></td></tr>
+              <tr><td><code class="inline">process_table()</code></td><td><code class="inline">{|table|}</code> syntax</td></tr>
+              <tr><td><code class="inline">process_item()</code></td><td>List items (<code class="inline">* # ; :</code>)</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="docs-section" id="explanation-tvar">
+          <span class="section-badge badge-explanation">Explanation</span>
+          <h2>What are tvar tags and why do they matter?</h2>
+          <p><code class="inline">&lt;tvar name="n"&gt;…&lt;/tvar&gt;</code> tags mark <strong>non-translatable variables</strong> inside a translation unit. They serve two purposes:</p>
+
+          <h4>1. Protect dynamic or structural content</h4>
+          <p>URLs, template syntax, and file names must not be altered by translators. Wrapping them in <code class="inline">&lt;tvar&gt;</code> hides them from the translation interface while keeping them in the final rendered output.</p>
+
+          <h4>2. Allow translators to reorder content</h4>
+          <p>A translator working in a language with different word order can move the placeholder token (e.g., <code class="inline">$1</code>) to the correct position without touching the underlying URL or template call.</p>
+
+          <div class="example-pair">
+            <div class="example-box">
+              <div class="example-box-header input">What the translator sees</div>
+              <pre>Visit [$1 our website] for details.</pre>
+            </div>
+            <div class="example-box">
+              <div class="example-box-header output">What the wiki renders</div>
+              <pre>Visit [https://wikimediafoundation.org our website] for details.</pre>
+            </div>
+          </div>
+
+          <p>TranslateTagger assigns each <code class="inline">&lt;tvar&gt;</code> a unique sequential numeric name (<code class="inline">1</code>, <code class="inline">2</code>, …) scoped to the entire document, ensuring there are no duplicates across sections.</p>
+        </section>
+
+        <!-- ════════════════════════════════
+             CONTRIBUTING
+        ════════════════════════════════ -->
+        <section class="docs-section" id="contributing">
+          <h2>Contributing</h2>
+          <p>Contributions are welcome. The project is hosted on GitHub.</p>
+          <ul>
+            <li><strong>Source code:</strong> <a href="https://github.com/indictechcom/translatable-wikitext-converter" target="_blank">github.com/indictechcom/translatable-wikitext-converter</a></li>
+            <li><strong>Bug reports &amp; feature requests:</strong> <a href="https://phabricator.wikimedia.org/maniphest/task/edit/form/43/?tags=tool-translatetagger" target="_blank">Phabricator — tool-translatetagger</a></li>
+          </ul>
+
+          <h3>Local development setup</h3>
+          <pre><code>git clone https://github.com/indictechcom/translatable-wikitext-converter
+cd translatable-wikitext-converter
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python app.py          # runs on http://127.0.0.1:5000</code></pre>
+
+          <h3>Running tests</h3>
+          <pre><code># All tests
+python tests.py
+
+# Single test by name
+python -m unittest tests.WikitextConverterTest.test_section_heading</code></pre>
+        </section>
+
+      </main>
+    </div>
+
+    <footer class="docs-footer">
+      TranslateTagger is a <a href="https://wikimediafoundation.org/" target="_blank">Wikimedia</a> community tool, deployed on
+      <a href="https://toolforge.org/" target="_blank">Toolforge</a>.
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+      hljs.highlightAll();
+
+      // Active sidebar link on scroll
+      const sections = document.querySelectorAll('.docs-section[id], #overview');
+      const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            navLinks.forEach(link => {
+              link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id);
+            });
+          }
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+
+      sections.forEach(s => observer.observe(s));
+    </script>
+  </body>
+</html>

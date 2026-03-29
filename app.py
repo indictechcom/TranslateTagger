@@ -935,6 +935,10 @@ def convert_to_translatable_wikitext(wikitext):
 def index():
     return render_template('home.html')
 
+@app.route('/docs')
+def docs():
+    return render_template('docs.html')
+
 @app.route('/convert', methods=['GET'])
 def redirect_to_home():
     return render_template('home.html')
