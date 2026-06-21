@@ -219,21 +219,21 @@ def process_code_tag(text, tvar_code_id=0):
 def process_div(text):
     """
     Processes <div> tags in the wikitext.
-    It wraps the content in <translate> tags.
+    Recursively converts the div's content so nested elements and
+    translatable text are handled correctly.
     """
     assert(text.startswith('<div') and text.endswith('</div>')), "Invalid div tag"
     start_tag_end = text.find('>') + 1
-    end_tag_start = text.rfind('<')
+    end_tag_start = text.rfind('</div>')
     if start_tag_end >= end_tag_start:
-        return text 
-    prefix = text[:start_tag_end]
-    content = text[start_tag_end:end_tag_start].strip()
-    suffix = text[end_tag_start:]
-    if not content:
         return text
-    # Wrap the content in <translate> tags
-    wrapped_content = _wrap_in_translate(content)
-    return f"{prefix}{wrapped_content}{suffix}"
+    prefix = text[:start_tag_end]
+    content = text[start_tag_end:end_tag_start]
+    suffix = '</div>'
+    if not content.strip():
+        return text
+    processed_content = convert_to_translatable_wikitext(content)
+    return f"{prefix}{processed_content}{suffix}"
 
 def process_hiero(text):
     """
@@ -590,6 +590,41 @@ def process_raw_url(text):
     return text.strip()
 
 
+def _find_balanced_close_tag(wikitext, start, open_tag, close_tag, open_check_chars=None):
+    """
+    Find the position after the balanced close_tag matching the open_tag at `start`.
+    Handles nesting by counting opening and closing occurrences.
+    open_check_chars: if given, the character immediately after open_tag must be in
+                      this set for a candidate to count as a real opening tag.
+    Returns end position (exclusive) or len(wikitext) as a fallback.
+    """
+    count = 1
+    pos = start + len(open_tag)
+    open_len = len(open_tag)
+    close_len = len(close_tag)
+    n = len(wikitext)
+
+    while pos < n and count > 0:
+        next_open = wikitext.find(open_tag, pos)
+        next_close = wikitext.find(close_tag, pos)
+
+        if next_close == -1:
+            return n  # Malformed; treat rest of text as part of the tag
+
+        if next_open != -1 and next_open < next_close:
+            after = next_open + open_len
+            if open_check_chars is None or (after < n and wikitext[after] in open_check_chars):
+                count += 1
+                pos = after
+            else:
+                pos = next_open + 1  # Not a real opening tag; skip one char
+        else:
+            count -= 1
+            pos = next_close + close_len
+
+    return pos
+
+
 # --- Main Tokenisation Logic ---
 
 def convert_to_translatable_wikitext(wikitext):
@@ -632,9 +667,9 @@ def convert_to_translatable_wikitext(wikitext):
             if last < curr:
                 parts.append((wikitext[last:curr], _wrap_in_translate))
             parts.append((wikitext[curr:end_pattern], process_syntax_highlight))
-            curr = end_pos
+            curr = end_pattern
             last = curr
-            continue 
+            continue
         
         # Process content inside existing <translate> tags
         pattern = '<translate>'
@@ -667,10 +702,10 @@ def convert_to_translatable_wikitext(wikitext):
             last = curr
             continue
 
-        # Table block
+        # Table block — use balanced matching so nested tables are handled correctly
         pattern = '{|'
         if wikitext.startswith(pattern, curr):
-            end_pattern = wikitext.find('|}', curr) + len('|}')
+            end_pattern = _find_balanced_close_tag(wikitext, curr, '{|', '|}')
             if last < curr:
                 parts.append((wikitext[last:curr], _wrap_in_translate))
             parts.append((wikitext[curr:end_pattern], process_table))
@@ -707,10 +742,15 @@ def convert_to_translatable_wikitext(wikitext):
             curr = end_pattern
             last = curr
             continue
-        # Div tag
+        # Div tag — use balanced matching so nested <div>s are handled correctly
         pattern = '<div'
-        if wikitext.startswith(pattern, curr):
-            end_pattern = wikitext.find('</div>', curr) + len('</div>')
+        if wikitext.startswith(pattern, curr) and (
+            curr + 4 >= text_length or wikitext[curr + 4] in ('>', ' ', '\t', '\n', '/')
+        ):
+            end_pattern = _find_balanced_close_tag(
+                wikitext, curr, '<div', '</div>',
+                open_check_chars={'>', ' ', '\t', '\n', '/'}
+            )
             if last < curr:
                 parts.append((wikitext[last:curr], _wrap_in_translate))
             parts.append((wikitext[curr:end_pattern], process_div))
