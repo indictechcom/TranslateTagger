@@ -233,6 +233,13 @@ class TestTranslatableWikitext(unittest.TestCase):
             ),
             "<translate>Example phab: [[<tvar name=0>Phab:T2001</tvar>|phab:T2001]]\n\nExample meta: [[<tvar name=1>M:Main Page</tvar>|m:Main Page]]</translate>"
         )
-
+    def test_italic_text(self):
+            self.assertEqual(
+                convert_to_translatable_wikitext(
+                    "[[m:Main Page]]"
+                ),
+                "<translate>[[<tvar name=0>M:Main Page</tvar>|m:Main Page]]</translate>"
+            )
+                
 if __name__ == '__main__':
     unittest.main(exit=False, failfast=True)
