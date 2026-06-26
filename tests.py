@@ -120,6 +120,36 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext("<poem>Line 1\nLine 2</poem>"),
             "<poem><translate>Line 1\nLine 2</translate></poem>"
         )
+        
+    def test_center_tag(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("<center>Some text</center>"),
+            "<center><translate>Some text</translate></center>"
+        )
+
+    def test_big_tag(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("<big>Important Heading</big>"),
+            "<big><translate>Important Heading</translate></big>"
+        )
+
+    def test_formatting_tags_in_sentence(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("This is some text with <center>center tag</center> and more text"),
+            "<translate>This is some text with</translate> <center><translate>center tag</translate></center> <translate>and more text</translate>"
+        )
+
+    def test_formatting_tag_empty_or_whitespace(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("<center>   </center>"),
+            "<center>   </center>"
+        )
+
+    def test_nested_formatting_tags(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("<center><big>Nested Content</big></center>"),
+            "<center><big><translate>Nested Content</translate></big></center>"
+        )
 
     def test_code_tag_with_tvar(self):
 
