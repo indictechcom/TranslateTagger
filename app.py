@@ -196,6 +196,32 @@ def process_poem_tag(text):
     wrapped_content = _wrap_in_translate(content)
     return f"{prefix}{wrapped_content}{suffix}"
 
+def process_formatting_tag(text, tag_name="center"):
+    """
+    Processes formatting tags like <center> or <big> by keeping the structural 
+    formatting tags outside, and translating only the inner contents.
+    """
+    open_tag = f"<{tag_name}>"
+    close_tag = f"</{tag_name}>"
+    
+    assert(text.startswith(open_tag) and text.endswith(close_tag)), f"Invalid {tag_name} tag"
+    
+    start_tag_end = len(open_tag)
+    end_tag_start = text.rfind(close_tag)
+    
+    if start_tag_end >= end_tag_start:
+        return text 
+        
+    prefix = text[:start_tag_end]
+    content = text[start_tag_end:end_tag_start]
+    suffix = text[end_tag_start:]
+    
+    if not content.strip():
+        return text
+        
+    processed_content = convert_to_translatable_wikitext(content)
+    return f"{prefix}{processed_content}{suffix}"
+
 def process_code_tag(text, tvar_code_id=0):
     """
     Processes <code> tags in the wikitext.
@@ -732,6 +758,30 @@ def convert_to_translatable_wikitext(wikitext):
             curr = end_pattern
             last = curr
             continue
+                
+        # Center tag
+        pattern = '<center>'
+        if wikitext.startswith(pattern, curr):
+            end_pattern = wikitext.find('</center>', curr) + len('</center>')
+            if last < curr:
+                parts.append((wikitext[last:curr], _wrap_in_translate))
+            # Lambda forces the handler to pass the correct tag name to our processor
+            parts.append((wikitext[curr:end_pattern], lambda x: process_formatting_tag(x, "center")))
+            curr = end_pattern
+            last = curr
+            continue
+
+        # Big tag
+        pattern = '<big>'
+        if wikitext.startswith(pattern, curr):
+            end_pattern = wikitext.find('</big>', curr) + len('</big>')
+            if last < curr:
+                parts.append((wikitext[last:curr], _wrap_in_translate))
+            parts.append((wikitext[curr:end_pattern], lambda x: process_formatting_tag(x, "big")))
+            curr = end_pattern
+            last = curr
+            continue
+            
         # Code tag
         pattern = '<code'
         if wikitext.startswith(pattern, curr):
