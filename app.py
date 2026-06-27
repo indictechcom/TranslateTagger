@@ -213,7 +213,7 @@ def process_code_tag(text, tvar_code_id=0):
     if not content:
         return text
     # Wrap the content in <translate> tags
-    wrapped_content = f'<tvar name=code{tvar_code_id}>{prefix}{content}{suffix}</tvar>'
+    wrapped_content = f'<tvar name="code{tvar_code_id}">{prefix}{content}{suffix}</tvar>'
     return wrapped_content
 
 def process_div(text):
@@ -428,7 +428,7 @@ def _process_file(s, tvar_inline_icon_id=0):
         
     if is_inline_icon:
         # return something like: <tvar name="icon">[[File:smiley.png|alt=🙂]]</tvar>
-        returnline = f'<tvar name=icon{tvar_inline_icon_id}>[[' + '|'.join(tokens) + ']]</tvar>'
+        returnline = f'<tvar name="icon{tvar_inline_icon_id}">[[' + '|'.join(tokens) + ']]</tvar>'
         return returnline, double_brackets_types.inline_icon
     
     ############################
@@ -507,6 +507,12 @@ def process_double_brackets(text, tvar_id=0):
         'Image:', 'image:', 'Image talk:', 'image talk:',
         'Cat:', 'cat:',
     }
+    inter_language_prefixes = {
+    'en','fr','de','es','it','pt','nl','pl','ru','ja','zh','ar','hi','bn','ta',
+    'te','ml','kn','mr','gu','pa','or','as','ur','fa','he','ko','vi','th','id',
+    'ms','tr','uk','cs','sv','fi','da','no','nb','nn','el','hu','ro','bg','sr',
+    'hr','sk','sl','et','lv','lt','ca','eu','gl','ga','cy','is','sq','simple',
+}
 
     ns = None
     if ':' in parts[0]:
@@ -519,15 +525,17 @@ def process_double_brackets(text, tvar_id=0):
         return _process_file(text)
     if ns in skip_namespaces:
         return text, double_brackets_types.special if ns == 'Special:' else double_brackets_types.wikilink
+    if ns is not None and ns[:-1].lower() in inter_language_prefixes:
+        return text, double_brackets_types.wikilink
     # Interwiki links: colon-prefixed but not a known internal MediaWiki namespace
     if ns is not None and ns not in internal_namespaces:
         link_target = capitalise_first_letter(parts[0])
         display_text = parts[0] if len(parts) == 1 else parts[1]
-        return f'[[<tvar name={tvar_id}>{link_target}</tvar>|{display_text}]]', double_brackets_types.wikilink
+        return f'[[<tvar name="{tvar_id}">{link_target}</tvar>|{display_text}]]', double_brackets_types.wikilink
     if len(parts) == 1:
-        return f'[[<tvar name={tvar_id}>Special:MyLanguage</tvar>/{capitalise_first_letter(parts[0])}|{parts[0]}]]', double_brackets_types.wikilink
+        return f'[[<tvar name="{tvar_id}">Special:MyLanguage/{capitalise_first_letter(parts[0])}</tvar>|{parts[0]}]]', double_brackets_types.wikilink
     if len(parts) == 2:
-        return f'[[<tvar name={tvar_id}>Special:MyLanguage</tvar>/{capitalise_first_letter(parts[0])}|{parts[1]}]]', double_brackets_types.wikilink
+        return f'[[<tvar name="{tvar_id}">Special:MyLanguage/{capitalise_first_letter(parts[0])}</tvar>|{parts[1]}]]', double_brackets_types.wikilink
 
     return text
 
@@ -543,7 +551,7 @@ def process_external_link(text, tvar_url_id=0):
         url_part = match.group(1)
         description_part = match.group(2)
         # Wrap only the description part in <translate> tags, leave the URL untouched
-        return f'[<tvar name=url{tvar_url_id}>{url_part}</tvar> {description_part}]'
+        return f'[<tvar name="url{tvar_url_id}">{url_part}</tvar> {description_part}]'
     return text
 
 def process_template(text):
@@ -625,6 +633,24 @@ def _find_balanced_close_tag(wikitext, start, open_tag, close_tag, open_check_ch
     return pos
 
 
+#  <tvar> renumbering 
+tvar_name = re.compile(r'<tvar\s+name=(?:"[^"]*"|[^\s">]+)\s*>')
+boundary_pattern = re.compile(r'(\n[ \t]*\n|</?translate>)')
+
+def renumber_tvars_per_unit(text):
+    out = []
+    for piece in boundary_pattern.split(text):
+        if boundary_pattern.fullmatch(piece):
+            out.append(piece)
+            continue
+        counter = {'n': 0}
+        def _repl(_m):
+            counter['n'] += 1
+            return f'<tvar name="{counter["n"]}">'
+        out.append(tvar_name.sub(_repl, piece))
+    return ''.join(out)
+
+
 # --- Main Tokenisation Logic ---
 
 def convert_to_translatable_wikitext(wikitext):
@@ -636,7 +662,8 @@ def convert_to_translatable_wikitext(wikitext):
     """
     if not wikitext:
         return ""
-    
+    wikitext = wikitext.replace('\r\n', '\n').replace('\r', '\n')   # <-- add this
+
     # add an extra newline at the beginning, useful to process items at the beginning of the text
     wikitext = '\n' + wikitext
 
@@ -999,8 +1026,8 @@ def convert_to_translatable_wikitext(wikitext):
         print(f"---\n") 
     """
     
-    # Join the processed parts into a single string
-    return ''.join(processed_parts)[1:]  # Remove the leading newline added at the beginning
+    # Join the processed parts into a single string and renumber tvars per unit
+    return renumber_tvars_per_unit(''.join(processed_parts)[1:])  # Remove the leading newline added at the beginning
 
 @app.route('/')
 def index():

@@ -34,7 +34,7 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext(
                 'This is a text with an [[internal link]] and an [https://openstreetmap.org external link].'
             ),
-            '<translate>This is a text with an [[<tvar name=0>Special:MyLanguage</tvar>/Internal link|internal link]] and an [<tvar name=url0>https://openstreetmap.org</tvar> external link].</translate>'
+            '<translate>This is a text with an [[<tvar name="1">Special:MyLanguage/Internal link</tvar>|internal link]] and an [<tvar name="2">https://openstreetmap.org</tvar> external link].</translate>'
         )
     
     def test_category_with_translation(self):
@@ -52,7 +52,7 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_simple_internal_link(self):
         self.assertEqual(
             convert_to_translatable_wikitext('[[link]]'),
-            '<translate>[[<tvar name=0>Special:MyLanguage</tvar>/Link|link]]</translate>'
+            '<translate>[[<tvar name="1">Special:MyLanguage/Link</tvar>|link]]</translate>'
         )
     
     def test_multiline_text(self):
@@ -66,7 +66,7 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext(
                 '[[File:pretty hello word.png | alt=Hello everybody!]] [[File:smiley.png|alt=🙂]] How are you?'
             ),
-            '[[File:pretty hello word.png|alt=<translate>Hello everybody!</translate>]] <translate><tvar name=icon0>[[File:smiley.png|alt=🙂]]</tvar> How are you?</translate>'
+            '[[File:pretty hello word.png|alt=<translate>Hello everybody!</translate>]] <translate><tvar name="1">[[File:smiley.png|alt=🙂]]</tvar> How are you?</translate>'
         )
     
     def test_double_namespace_without_list_case_1(self):
@@ -74,7 +74,7 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext(
                 '[[Help]]ing'
             ),
-            '<translate>[[<tvar name=0>Special:MyLanguage</tvar>/Help|Help]]ing</translate>'
+            '<translate>[[<tvar name="1">Special:MyLanguage/Help</tvar>|Help]]ing</translate>'
         )
     
     def test_double_namespace_without_list_case_2(self):
@@ -82,7 +82,7 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext(
                 '[[Help]] ing'
             ),
-            '<translate>[[<tvar name=0>Special:MyLanguage</tvar>/Help|Help]] ing</translate>'
+            '<translate>[[<tvar name="1">Special:MyLanguage/Help</tvar>|Help]] ing</translate>'
         )
 
     def test_template_simple(self):
@@ -126,7 +126,7 @@ class TestTranslatableWikitext(unittest.TestCase):
         # Assuming process_code_tag assigns tvar names sequentially starting from 0
         self.assertEqual(
             convert_to_translatable_wikitext("Here is <code>some code</code> for you."),
-            "<translate>Here is <tvar name=code0><code>some code</code></tvar> for you.</translate>"
+            "<translate>Here is <tvar name=\"1\"><code>some code</code></tvar> for you.</translate>"
         )
        
 
@@ -169,7 +169,7 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_multiple_elements_in_one_line(self):
         self.assertEqual(
             convert_to_translatable_wikitext("Hello world! [[Link]] {{Template}} [https://meta.wikimedia.org/wiki/Main_Page Home]"),
-            '<translate>Hello world! [[<tvar name=0>Special:MyLanguage</tvar>/Link|Link]]</translate> {{Template}} <translate>[<tvar name=url0>https://meta.wikimedia.org/wiki/Main_Page</tvar> Home]</translate>'
+            '<translate>Hello world! [[<tvar name="1">Special:MyLanguage/Link</tvar>|Link]]</translate> {{Template}} <translate>[<tvar name="1">https://meta.wikimedia.org/wiki/Main_Page</tvar> Home]</translate>'
         )
 
     def test_text_around_br_tag(self):
@@ -211,19 +211,19 @@ class TestTranslatableWikitext(unittest.TestCase):
     def test_interwiki_phab_link(self):
         self.assertEqual(
             convert_to_translatable_wikitext("[[phab:T2001]]"),
-            "<translate>[[<tvar name=0>Phab:T2001</tvar>|phab:T2001]]</translate>"
+            "<translate>[[<tvar name=\"1\">Phab:T2001</tvar>|phab:T2001]]</translate>"
         )
 
     def test_interwiki_meta_link(self):
         self.assertEqual(
             convert_to_translatable_wikitext("[[m:Main Page]]"),
-            "<translate>[[<tvar name=0>M:Main Page</tvar>|m:Main Page]]</translate>"
+            "<translate>[[<tvar name=\"1\">M:Main Page</tvar>|m:Main Page]]</translate>"
         )
 
     def test_interwiki_link_with_label(self):
         self.assertEqual(
             convert_to_translatable_wikitext("[[phab:T2001|T2001 ticket]]"),
-            "<translate>[[<tvar name=0>Phab:T2001</tvar>|T2001 ticket]]</translate>"
+            "<translate>[[<tvar name=\"1\">Phab:T2001</tvar>|T2001 ticket]]</translate>"
         )
 
     def test_interwiki_links_inline(self):
@@ -231,7 +231,7 @@ class TestTranslatableWikitext(unittest.TestCase):
             convert_to_translatable_wikitext(
                 "Example phab: [[phab:T2001]]\n\nExample meta: [[m:Main Page]]"
             ),
-            "<translate>Example phab: [[<tvar name=0>Phab:T2001</tvar>|phab:T2001]]\n\nExample meta: [[<tvar name=1>M:Main Page</tvar>|m:Main Page]]</translate>"
+            "<translate>Example phab: [[<tvar name=\"1\">Phab:T2001</tvar>|phab:T2001]]\n\nExample meta: [[<tvar name=\"1\">M:Main Page</tvar>|m:Main Page]]</translate>"
         )
 
 if __name__ == '__main__':
