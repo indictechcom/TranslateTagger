@@ -637,6 +637,14 @@ def _find_balanced_close_tag(wikitext, start, open_tag, close_tag, open_check_ch
 tvar_name = re.compile(r'<tvar\s+name=(?:"[^"]*"|[^\s">]+)\s*>')
 boundary_pattern = re.compile(r'(\n[ \t]*\n|</?translate>)')
 
+_HEAD_OPEN = re.compile(r'<translate>([ \t]*)(=+[^\n]*=+)')
+_HEAD_CLOSE = re.compile(r'(=+[^\n]*=+)([ \t]*)</translate>')
+
+def isolate_block_boundary_headings(text):
+    text = _HEAD_OPEN.sub(r'<translate>\n\2', text)
+    text = _HEAD_CLOSE.sub(r'\1\n</translate>', text)
+    return text
+
 def renumber_tvars_per_unit(text):
     out = []
     for piece in boundary_pattern.split(text):
@@ -674,19 +682,6 @@ def convert_to_translatable_wikitext(wikitext):
 
     while curr < text_length :
         found = None
-        if wikitext[curr] == '=':
-            # Find the end of the line
-            end_line = wikitext.find('\n', curr)
-            if end_line == -1:
-                end_line = text_length
-            line = wikitext[curr:end_line]
-            if re.match(r'^(=+)[^=]+(=+)$', line.strip()):
-                if last < curr:
-                    parts.append((wikitext[last:curr], _wrap_in_translate))
-                parts.append((line, process_section_heading))
-                curr = end_line
-                last = curr
-                continue
         # Syntax highlight block
         pattern = '<syntaxhighlight'
         if wikitext.startswith(pattern, curr):
@@ -1027,8 +1022,9 @@ def convert_to_translatable_wikitext(wikitext):
     """
     
     # Join the processed parts into a single string and renumber tvars per unit
-    return renumber_tvars_per_unit(''.join(processed_parts)[1:])  # Remove the leading newline added at the beginning
-
+    result = renumber_tvars_per_unit(''.join(processed_parts)[1:]) # Remove the leading newline added at the beginning
+    return isolate_block_boundary_headings(result) 
+    
 @app.route('/')
 def index():
     return render_template('home.html', last_updated=get_last_updated_date())
