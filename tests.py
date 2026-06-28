@@ -272,4 +272,4 @@ class TestTranslatableWikitext(unittest.TestCase):
         "<translate>[[<tvar name=0>m:Special:MyLanguage/Main Page</tvar>|Main Page]]</translate>"
     )
 if __name__ == '__main__':
-    unittest.main(exit=False, failfast=True)
+    unittest.main(exit=True, failfast=True)
