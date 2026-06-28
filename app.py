@@ -102,6 +102,18 @@ def _wrap_in_translate(text):
     content = text[first_char_index : last_char_index + 1]
     trailing_whitespace = text[last_char_index + 1 :]
 
+    heading_match = re.match(
+    r'^(==+.*?==)(?:\r?\n)+(.*)$',
+    content,
+    flags=re.DOTALL,
+    )
+
+    if heading_match:
+        heading = heading_match.group(1)
+        body = heading_match.group(2)
+        newline = "\r\n" if "\r\n" in content else "\n"
+        content = f"{heading}{newline}{newline}{body}"
+
     return f"{leading_whitespace}<translate>{content}</translate>{trailing_whitespace}"
 
 def process_syntax_highlight(text):
@@ -596,22 +608,6 @@ def process_template(text):
 
     return str(code)
 
-
-# --- Section Heading Handler ---
-def process_section_heading(text):
-    """
-    Processes section headings like ==Title== and wraps the entire heading in <translate> tags,
-    with the tags on their own lines per MediaWiki translation guidelines.
-    """
-    # Match ==Title==, ===Subsection===, etc.
-    match = re.match(r'^(=+)([^=]+)(=+)$', text.strip())
-    if not match:
-        return text
-    level = match.group(1)
-    heading_text = match.group(2).strip()
-    # Wrap the entire heading (including == markers) in <translate> tags on their own lines
-    return f'<translate>\n{level}{heading_text}{level}\n</translate>'
-
 def process_raw_url(text):
     """
     Processes raw URLs in the wikitext.
@@ -700,19 +696,6 @@ def convert_to_translatable_wikitext(wikitext):
 
     while curr < text_length :
         found = None
-        if wikitext[curr] == '=':
-            # Find the end of the line
-            end_line = wikitext.find('\n', curr)
-            if end_line == -1:
-                end_line = text_length
-            line = wikitext[curr:end_line]
-            if re.match(r'^(=+)[^=]+(=+)$', line.strip()):
-                if last < curr:
-                    parts.append((wikitext[last:curr], _wrap_in_translate))
-                parts.append((line, process_section_heading))
-                curr = end_line
-                last = curr
-                continue
         # Syntax highlight block
         pattern = '<syntaxhighlight'
         if wikitext.startswith(pattern, curr):
