@@ -285,5 +285,30 @@ class TestTranslatableWikitext(unittest.TestCase):
         ),
         "<translate>[[<tvar name=0>m:Special:MyLanguage/Main Page</tvar>|Main Page]]</translate>"
     )
+
+    def test_email_label_only_pushed_outside(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("Contact: foo@bar.com"),
+            "<translate>Contact:</translate> {{nospam|foo|bar.com}}"
+        )
+
+    def test_email_already_in_nospam_untouched(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("Email: {{nospam|foo|bar.com}}"),
+            "<translate>Email:</translate> {{nospam|foo|bar.com}}"
+        )
+
+    def test_email_with_trailing_punctuation(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("Write to: hello@example.org."),
+            "<translate>Write to:</translate> {{nospam|hello|example.org}}."
+        )
+
+    def test_email_with_surrounding_text_keeps_tvar(self):
+        self.assertEqual(
+            convert_to_translatable_wikitext("Send questions to info@wiki.org or use the form."),
+            '<translate>Send questions to <tvar name="email1">{{nospam|info|wiki.org}}</tvar> or use the form.</translate>'
+        )
+
 if __name__ == '__main__':
     unittest.main(exit=True, failfast=True)

@@ -676,6 +676,55 @@ def renumber_tvars_per_unit(text):
         out.append(tvar_name.sub(_repl, piece))
     return ''.join(out)
 
+email_regrex = re.compile(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}')
+
+def email_to_nospam(addr):
+    user, domain = addr.split('@', 1)
+    return f'{{{{nospam|{user}|{domain}}}}}'
+
+def process_emails_in_units(text):
+    def replace_in_unit(match):
+        content = match.group(1)
+        
+        emails = email_regrex.findall(content)
+        if not emails:
+            return match.group(0)
+            
+        # Push outside if it's just a label + email
+        if len(emails) == 1:
+            match_email = next(email_regrex.finditer(content))
+            prefix = content[:match_email.start()]
+            suffix = content[match_email.end():]
+            
+            plain_prefix = re.sub(r'<[^>]+>', '', prefix).strip()
+            plain_suffix = re.sub(r'<[^>]+>', '', suffix).strip()
+            
+            # If suffix is basically empty or just punctuation:
+            if len(plain_suffix) <= 1 and plain_suffix in ('', '.', ',', ';', ':', '!', '?'):
+                # If prefix is a short label
+                if len(plain_prefix) < 50 and len(plain_prefix.split()) <= 10:
+                    nospam = email_to_nospam(match_email.group(0))
+                    
+                    if not prefix.strip():
+                        return f'{nospam}{suffix}'
+                    
+                    return f'<translate>{prefix.rstrip()}</translate> {nospam}{suffix}'
+
+        # Otherwise, keep inside and tvar 
+        email_counter = 1
+        def email_regrexpl(m):
+            nonlocal email_counter
+            addr = m.group(0)
+            nospam = email_to_nospam(addr)
+            res = f'<tvar name="email{email_counter}">{nospam}</tvar>'
+            email_counter += 1
+            return res
+            
+        new_content = email_regrex.sub(email_regrexpl, content)
+        return f'<translate>{new_content}</translate>'
+
+    return re.sub(r'<translate>(.*?)</translate>', replace_in_unit, text, flags=re.DOTALL)
+
 
 # --- Main Tokenisation Logic ---
 
@@ -700,19 +749,6 @@ def convert_to_translatable_wikitext(wikitext):
 
     while curr < text_length :
         found = None
-        if wikitext[curr] == '=':
-            # Find the end of the line
-            end_line = wikitext.find('\n', curr)
-            if end_line == -1:
-                end_line = text_length
-            line = wikitext[curr:end_line]
-            if re.match(r'^(=+)[^=]+(=+)$', line.strip()):
-                if last < curr:
-                    parts.append((wikitext[last:curr], _wrap_in_translate))
-                parts.append((line, process_section_heading))
-                curr = end_line
-                last = curr
-                continue
         # Syntax highlight block
         pattern = '<syntaxhighlight'
         if wikitext.startswith(pattern, curr):
@@ -1077,8 +1113,11 @@ def convert_to_translatable_wikitext(wikitext):
     """
     
     # Join the processed parts into a single string and renumber tvars per unit
-    return renumber_tvars_per_unit(''.join(processed_parts)[1:])  # Remove the leading newline added at the beginning
-
+    result = ''.join(processed_parts)[1:] # Remove the leading newline added at the beginning
+    result = renumber_tvars_per_unit(result)
+    return process_emails_in_units(result)
+    
+    
 @app.route('/')
 def index():
     return render_template('home.html', last_updated=get_last_updated_date())
