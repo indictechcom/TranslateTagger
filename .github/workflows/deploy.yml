@@ -52,5 +52,5 @@ jobs:
           script_stop: true
           script: |
             become translatetagger toolforge build clean -y
-            become translatetagger toolforge build start https://github.com/ftosoni/TranslateTagger
+            become translatetagger toolforge build start https://github.com/indictechcom/TranslateTagger
             become translatetagger toolforge webservice buildservice restart || become translatetagger toolforge webservice buildservice start --mount=all
