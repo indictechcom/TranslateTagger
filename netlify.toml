@@ -2,6 +2,16 @@
 directory = "netlify/functions"
 
 [[redirects]]
+from = "/"
+to = "/templates/home.html"
+status = 200
+
+[[redirects]]
+from = "/docs"
+to = "/templates/docs.html"
+status = 200
+
+[[redirects]]
 from = "/*"
 to = "/.netlify/functions/handler"
 status = 200
