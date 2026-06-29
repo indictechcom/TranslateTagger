@@ -3,5 +3,5 @@ directory = "netlify/functions"
 
 [[redirects]]
 from = "/*"
-to = "/.netlify/functions/app"
+to = "/.netlify/functions/handler"
 status = 200

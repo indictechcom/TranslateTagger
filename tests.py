@@ -1,7 +1,21 @@
 import unittest
 from app import convert_to_translatable_wikitext, process_double_brackets
+from netlify.functions.handler import handler as netlify_handler
 
 class TestTranslatableWikitext(unittest.TestCase):
+
+    def test_netlify_handler_serves_homepage(self):
+        response = netlify_handler(
+            {
+                "path": "/",
+                "httpMethod": "GET",
+                "headers": {},
+                "queryStringParameters": {},
+                "body": "",
+            },
+            None,
+        )
+        self.assertEqual(response["statusCode"], 200)
 
     def test_section_headers(self):
         self.assertEqual(

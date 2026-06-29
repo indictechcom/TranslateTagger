@@ -416,7 +416,7 @@ def _process_file(s, tvar_inline_icon_id=0):
     # The first token shall start with a file alias
     # e.g., "File:Example.jpg" or "Image:Example.png"
     if not tokens or not tokens[0].startswith(tuple(file_aliases)):
-        return line, double_brackets_types.invalid_file
+        return s, double_brackets_types.invalid_file
     
     # The first token is a file link
     filename = tokens[0].split(':', 1)[1] if ':' in tokens[0] else tokens[0]
