@@ -93,3 +93,44 @@ This is a text with an [[internal link]] and an [https://openstreetmap.org exter
 * Links Handling: The tool wraps internal links with <tvar> tags for better translation support, ensuring they are localized using Special:MyLanguage.
 * Template Removal: Templates and other non-translatable elements will be automatically cleaned up for a simpler translation process.
 
+
+## Deployment (Toolforge)
+
+Follow these steps to deploy the application on Wikimedia Toolforge using the build service.
+
+> [!NOTE]
+> The examples below use `translatetagger` as the project name. Replace this with your own Toolforge credentials where applicable.
+
+### Deploy
+
+1. Log into Toolforge:
+   ```bash
+   ssh <username>@login.toolforge.org
+   ```
+
+2. Switch to the `translatetagger` project:
+   ```bash
+   become translatetagger
+   ```
+
+3. Stop and clean the existing build:
+   ```bash
+   toolforge webservice buildservice stop --mount=all
+   toolforge build clean -y
+   ```
+
+4. Start the build from the repository:
+   ```bash
+   toolforge build start https://github.com/ftosoni/TranslateTagger
+   ```
+
+5. Start the webservice:
+   ```bash
+   toolforge webservice buildservice start --mount=all
+   ```
+
+6. Monitor logs:
+   ```bash
+   toolforge webservice logs -f
+   ```
+
