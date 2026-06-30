@@ -1,7 +1,25 @@
 import unittest
-from app import convert_to_translatable_wikitext, process_double_brackets
+import json
+from converter import convert_to_translatable_wikitext, process_double_brackets
+from netlify.functions.handler import handler as netlify_handler
 
 class TestTranslatableWikitext(unittest.TestCase):
+
+    def test_netlify_handler_api_convert(self):
+        response = netlify_handler(
+            {
+                "path": "/api/convert",
+                "httpMethod": "POST",
+                "headers": {"content-type": "application/json"},
+                "queryStringParameters": {},
+                "body": json.dumps({"wikitext": "Hello [[World|world]]."}),
+                "isBase64Encoded": False,
+            },
+            None,
+        )
+        self.assertEqual(response["statusCode"], 200)
+        data = json.loads(response["body"])
+        self.assertIn("converted", data)
 
     def test_section_headers(self):
         self.assertEqual(

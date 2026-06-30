@@ -1,0 +1,16 @@
+[build]
+  publish = "public"
+  command = "cp converter.py netlify/functions/converter.py"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/convert"
+  to = "/.netlify/functions/handler"
+  status = 200
+
+[[redirects]]
+  from = "/convert"
+  to = "/.netlify/functions/handler"
+  status = 200

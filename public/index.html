@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wikitext to Translatable Wikitext Converter</title>
+    <link
+      rel="stylesheet"
+      href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/highlight.js/11.11.1/styles/atom-one-light.min.css"
+    />
+    <style>
+      html, body { height: 100%; margin: 0; }
+      .wrapper { min-height: 100vh; display: flex; flex-direction: column; }
+      .main-content { flex: 1; }
+      .navbar { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); padding: 1rem 2rem; }
+      .footer { background-color: #f8f9fa; text-align: center; padding: 1rem 0; position: sticky; bottom: 0; width: 100%; }
+      pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
+      .code-container { max-height: 400px; overflow-y: auto; overflow-x: hidden; border: 1px solid #ced4da; border-radius: 0.25rem; padding: 0.5rem; }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Wiki Translate Tagger</a>
+        <div class="ms-auto">
+          <a class="btn btn-sm btn-outline-light" href="/docs">Documentation</a>
+        </div>
+      </nav>
+
+      <div class="main-content container mt-5">
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Input Wikitext</h5>
+            <form id="convertForm">
+              <div class="mb-3">
+                <textarea
+                  class="form-control"
+                  id="wikitext"
+                  name="wikitext"
+                  rows="15"
+                  placeholder="Enter Wikitext here..."
+                ></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary" id="convertBtn">
+                Convert to Translatable Wikitext
+              </button>
+            </form>
+          </div>
+          <div class="col-md-6" id="outputSection" style="display: none;">
+            <h5>Translatable Wikitext Output</h5>
+            <div class="code-container">
+              <pre><code class="language-xml" id="outputText"></code></pre>
+            </div>
+            <button class="btn btn-secondary mt-3" onclick="copyToClipboard()">
+              Copy to Clipboard
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2 gap-md-0">
+          <p class="mb-0">
+            More info:
+            <a href="https://meta.wikimedia.org/wiki/Indic-TechCom">Indic-TechCom</a>
+          </p>
+          <span class="mx-2 d-none d-md-inline">|</span>
+          <p class="mb-0">
+            <a href="https://github.com/indictechcom/translatable-wikitext-converter">View source</a>
+          </p>
+          <span class="mx-2 d-none d-md-inline">|</span>
+          <p class="mb-0">Last updated on: <span id="lastUpdated">Loading…</span></p>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <script>
+      document.getElementById('convertForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const wikitext = document.getElementById('wikitext').value;
+        const btn = document.getElementById('convertBtn');
+        btn.disabled = true;
+        btn.textContent = 'Converting…';
+
+        try {
+          const resp = await fetch('/api/convert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wikitext }),
+          });
+          if (!resp.ok) {
+            throw new Error('Server error ' + resp.status);
+          }
+          const data = await resp.json();
+          const output = document.getElementById('outputText');
+          output.textContent = data.converted || '';
+          document.getElementById('outputSection').style.display = '';
+          hljs.highlightElement(output);
+        } catch (err) {
+          alert('Conversion failed: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Convert to Translatable Wikitext';
+        }
+      });
+
+      function copyToClipboard() {
+        var text = document.getElementById('outputText').innerText;
+        navigator.clipboard.writeText(text).then(
+          function () { alert('Copied to clipboard!'); },
+          function () {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); alert('Copied to clipboard!'); }
+            catch (e) { console.error('Unable to copy', e); }
+            document.body.removeChild(ta);
+          }
+        );
+      }
+
+      fetch('https://api.github.com/repos/indictechcom/translatable-wikitext-converter/commits?per_page=1')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && data[0] && data[0].commit) {
+            var d = new Date(data[0].commit.committer.date);
+            document.getElementById('lastUpdated').textContent = d.toLocaleDateString('en-US', {
+              year: 'numeric', month: 'long', day: 'numeric',
+            });
+          } else {
+            document.getElementById('lastUpdated').textContent = 'Unavailable';
+          }
+        })
+        .catch(function () {
+          document.getElementById('lastUpdated').textContent = 'Unavailable';
+        });
+    </script>
+  </body>
+</html>
